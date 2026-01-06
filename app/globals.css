@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 243, 244, 246;
+  --background-start-rgb: 10, 25, 41;
+  --background-end-rgb: 10, 25, 41;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-start-rgb));
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Light theme */
+html.light body {
+  background: #f8fafc;
+  color: #1e293b;
+}
+
+html.light .bg-navy-950 {
+  background-color: #f8fafc;
+}
+
+html.light .bg-navy-900 {
+  background-color: #ffffff;
+}
+
+html.light .text-white {
+  color: #1e293b;
+}
+
+html.light .text-gray-400 {
+  color: #64748b;
+}
+
+html.light .text-gray-300 {
+  color: #475569;
+}
+
+html.light .border-gray-800 {
+  border-color: #e2e8f0;
+}
+
+html.light .border-gray-700 {
+  border-color: #cbd5e1;
+}
+
+.smooth-scroll {
+  scroll-behavior: smooth;
+}
+
+.smooth-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.smooth-scroll::-webkit-scrollbar-track {
+  background: rgb(15, 23, 42);
+  border-radius: 4px;
+}
+
+.smooth-scroll::-webkit-scrollbar-thumb {
+  background: rgb(51, 65, 85);
+  border-radius: 4px;
+}
+
+.smooth-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgb(71, 85, 105);
+}
+
+/* Date Picker Styling - Make it larger and more touch-friendly */
+input[type="date"] {
+  font-size: 18px !important;
+  padding: 14px 18px !important;
+  min-height: 52px;
+  appearance: none;
+  -webkit-appearance: none;
+  transform: scale(1.05);
+  transform-origin: left center;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  font-size: 24px;
+  padding: 8px;
+  margin-left: 8px;
+  opacity: 0.8;
+  transition: opacity 0.2s, transform 0.2s;
+  transform: scale(1.2);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  transform: scale(1.3);
+}
+
+/* Ensure date picker dropdown is readable */
+input[type="date"]::-webkit-datetime-edit {
+  font-size: 18px;
+  padding: 0;
+}
+
+input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  padding: 0 4px;
+}
+
+input[type="date"]::-webkit-datetime-edit-text {
+  padding: 0 6px;
+  font-weight: 500;
+}
+
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+  font-size: 18px;
+  font-weight: 500;
+}
+
