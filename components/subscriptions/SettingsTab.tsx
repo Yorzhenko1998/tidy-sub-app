@@ -4,6 +4,14 @@ import { useState, useEffect } from 'react'
 import { Download, Upload, Trash2, Sun, Moon, Monitor } from 'lucide-react'
 import { useSubscriptions } from '@/contexts/SubscriptionContext'
 
+// Тимчасова функція-заглушка для дозволу на пуші
+const requestNotificationPermission = async () => {
+  if (typeof window !== 'undefined' && 'Notification' in window) {
+    const permission = await Notification.requestPermission();
+    console.log('Push permission:', permission);
+  }
+};
+
 export default function SettingsTab() {
   const { 
     subscriptions, 
