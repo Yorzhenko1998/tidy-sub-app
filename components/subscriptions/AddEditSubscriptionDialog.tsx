@@ -22,6 +22,13 @@ const colors = [
   '#EC7063', '#5DADE2', '#58D68D', '#F4D03F', '#AF7AC5'
 ]
 
+const toLocalISODate = (value: string | Date) => {
+  const date = typeof value === 'string' ? new Date(value) : value
+  const local = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const normalized = new Date(local.getTime() - local.getTimezoneOffset() * 60000)
+  return normalized.toISOString().split('T')[0]
+}
+
 export default function AddEditSubscriptionDialog({
   isOpen,
   onClose,
@@ -58,14 +65,14 @@ export default function AddEditSubscriptionDialog({
         amount: subscription.amount.toString(),
         currency: subscription.currency,
         billingInterval: subscription.billingInterval,
-        startDate: subscription.startDate,
+        startDate: toLocalISODate(subscription.startDate),
         category: subscription.category,
         icon: subIcon.startsWith('brand:') ? '' : subIcon,
         color: subscription.color,
         websiteUrl: subscription.websiteUrl || '',
         remindMe: (subscription as any).remindMe || '3',
         trialPeriod: (subscription as any).trialPeriod || false,
-        trialEndsOn: (subscription as any).trialEndsOn || '',
+        trialEndsOn: (subscription as any).trialEndsOn ? toLocalISODate((subscription as any).trialEndsOn) : '',
         notes: (subscription as any).notes || ''
       })
       setSelectedBrandIcon(brandIcon || null)
@@ -76,7 +83,7 @@ export default function AddEditSubscriptionDialog({
         amount: '',
         currency: globalCurrency,
         billingInterval: 'Monthly',
-        startDate: new Date().toISOString().split('T')[0],
+        startDate: toLocalISODate(new Date()),
         category: '',
         icon: '',
         color: colors[0],
@@ -208,7 +215,7 @@ export default function AddEditSubscriptionDialog({
       amount: parseFloat(formData.amount),
       currency: formData.currency,
       billingInterval: formData.billingInterval,
-      startDate: formData.startDate,
+      startDate: toLocalISODate(formData.startDate),
       category: formData.category,
       icon: selectedBrandIcon ? `brand:${selectedBrandIcon}` : (formData.icon || 'money'),
       color: formData.color,
@@ -223,7 +230,7 @@ export default function AddEditSubscriptionDialog({
     // Add trial period data if enabled
     if (formData.trialPeriod) {
       subscriptionData.trialPeriod = true
-      subscriptionData.trialEndsOn = formData.trialEndsOn
+      subscriptionData.trialEndsOn = formData.trialEndsOn ? toLocalISODate(formData.trialEndsOn) : ''
     } else {
       subscriptionData.trialPeriod = false
       subscriptionData.trialEndsOn = ''
@@ -258,7 +265,7 @@ export default function AddEditSubscriptionDialog({
         </div>
 
         {/* Scrollable Form Content */}
-        <div className="flex-1 overflow-y-auto pb-32">
+        <div className="flex-1 overflow-y-auto pb-6">
           <form onSubmit={handleSubmit} id="subscription-form">
             <div className="p-6 space-y-6 rounded-b-3xl">
             {/* Row 1: Name + Icon Preview */}

@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react'
 import { Download, Upload, Trash2, Sun, Moon, Monitor } from 'lucide-react'
 import { useSubscriptions } from '@/contexts/SubscriptionContext'
 
-import { requestNotificationPermission } from '@/utils/notifications'
-
 export default function SettingsTab() {
   const { 
     subscriptions, 
@@ -15,9 +13,7 @@ export default function SettingsTab() {
     theme, 
     setTheme,
     pushNotificationsEnabled,
-    setPushNotificationsEnabled,
-    remindersEnabled,
-    setRemindersEnabled
+    setPushNotificationsEnabled
   } = useSubscriptions()
 
   const handleExport = () => {
@@ -65,7 +61,7 @@ export default function SettingsTab() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] p-6 pb-24">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] px-4 md:px-6 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)] md:pt-8 overflow-x-hidden">
       <div className="max-w-4xl mx-auto">
         {/* Header Block - Settings */}
         <div className="bg-[#0f172a] dark:bg-slate-800/80 rounded-xl mb-4 dark:border dark:border-slate-700/40 dark:border-b dark:border-white/5">
@@ -115,35 +111,6 @@ export default function SettingsTab() {
           </div>
         </div>
 
-        {/* Reminders */}
-        <div className="bg-white dark:bg-slate-800/40 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm p-6 mb-4">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-blue-300 mb-4">Reminders</h2>
-          <div className="flex items-center justify-between">
-            <div>
-              <label className="text-slate-700 dark:text-gray-300 font-medium">Enable Reminders</label>
-              <p className="text-xs text-slate-500 dark:text-gray-400 mt-1">Get notified about subscriptions due in the next 24 hours</p>
-            </div>
-            <button
-              onClick={() => {
-                const newValue = !remindersEnabled
-                setRemindersEnabled(newValue)
-                if (newValue && pushNotificationsEnabled) {
-                  requestNotificationPermission()
-                }
-              }}
-              className={`relative w-12 h-6 rounded-full transition-colors ${
-                remindersEnabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-900/50'
-              }`}
-            >
-              <span
-                className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                  remindersEnabled ? 'translate-x-6' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-
         {/* Appearance */}
         <div className="bg-white dark:bg-slate-800/40 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm p-6 mb-4">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-blue-300 mb-4">Appearance</h2>
@@ -175,17 +142,17 @@ export default function SettingsTab() {
           <div className="flex flex-row gap-3">
             <button
               onClick={handleExport}
-              className="flex flex-col items-center justify-center gap-2 flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600/80 dark:hover:bg-blue-600/90 dark:shadow-[0_0_10px_rgba(59,130,246,0.2)] text-white rounded-lg transition-colors border-2 border-blue-600 dark:border-blue-500/50"
+              className="flex flex-row items-center justify-center gap-2 flex-1 h-11 md:h-12 px-3 md:px-4 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600/80 dark:hover:bg-blue-600/90 dark:shadow-[0_0_10px_rgba(59,130,246,0.2)] text-white rounded-lg transition-colors border-2 border-blue-600 dark:border-blue-500/50 text-sm md:text-base"
             >
               <Download className="w-4 h-4" />
-              <span className="text-xs font-medium">Export</span>
+              <span className="font-medium">Export</span>
             </button>
             <button
               onClick={handleImport}
-              className="flex flex-col items-center justify-center gap-2 flex-1 px-4 py-3 bg-white dark:bg-slate-800/40 dark:backdrop-blur-md hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-900 dark:text-white rounded-lg transition-colors border-2 border-slate-200 dark:border-white/5 text-sm font-medium"
+              className="flex flex-row items-center justify-center gap-2 flex-1 h-11 md:h-12 px-3 md:px-4 bg-white dark:bg-slate-800/40 dark:backdrop-blur-md hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-900 dark:text-white rounded-lg transition-colors border-2 border-slate-200 dark:border-white/5 text-sm md:text-base font-medium"
             >
               <Upload className="w-4 h-4" />
-              <span className="text-xs font-medium">Import</span>
+              <span className="font-medium">Import</span>
             </button>
           </div>
         </div>
@@ -200,9 +167,6 @@ export default function SettingsTab() {
             <Trash2 className="w-5 h-5" />
             Delete All Subscriptions
           </button>
-          <p className="text-slate-500 dark:text-gray-400 text-sm mt-2">
-            This will permanently delete all your subscriptions. This action cannot be undone.
-          </p>
         </div>
       </div>
     </div>

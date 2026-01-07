@@ -66,7 +66,7 @@ export default function Page() {
   // Prevent hydration mismatch - only render dynamic content after mount
   if (!hasMounted) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex items-center justify-center pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
         <div className="text-slate-500 dark:text-gray-400">Loading...</div>
       </div>
     )

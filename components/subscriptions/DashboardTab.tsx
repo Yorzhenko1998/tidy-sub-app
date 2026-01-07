@@ -38,10 +38,26 @@ export default function DashboardTab() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOption, setSortOption] = useState<SortOption>('nextPayment')
   const [mounted, setMounted] = useState(false)
+  const [searchPlaceholder, setSearchPlaceholder] = useState('Search')
 
-  // Prevent hydration mismatch
+  // Prevent hydration mismatch and set responsive placeholder
   useEffect(() => {
     setMounted(true)
+    
+    // Set responsive placeholder
+    const updatePlaceholder = () => {
+      if (window.innerWidth >= 768) {
+        setSearchPlaceholder('Search subscriptions...')
+      } else {
+        setSearchPlaceholder('Search')
+      }
+    }
+    updatePlaceholder()
+    window.addEventListener('resize', updatePlaceholder)
+    
+    return () => {
+      window.removeEventListener('resize', updatePlaceholder)
+    }
   }, [])
 
   // Calculate next payment date for a subscription
@@ -242,42 +258,48 @@ export default function DashboardTab() {
 
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] p-6 pb-24">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] px-4 md:px-6 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)] md:pt-8 overflow-x-hidden">
       <div className="max-w-4xl mx-auto">
         {/* Header Block - Your Subscriptions */}
-        <div className="bg-[#0f172a] dark:bg-slate-800/80 rounded-xl mb-4 dark:border dark:border-slate-700/40 dark:border-b dark:border-white/5">
+        <div className="bg-[#0f172a] dark:bg-slate-800/80 rounded-xl mb-4 mt-2 dark:border dark:border-slate-700/40 dark:border-b dark:border-white/5">
           <h1 className="text-3xl font-bold tracking-tight !text-white text-center py-3">Your Subscriptions</h1>
         </div>
 
         {/* Search Bar and Sort */}
-        <div className="flex gap-3 mb-2">
-          <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Search subscriptions..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800/40 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+        <div className="flex flex-row items-center w-full gap-2 md:gap-3 mb-2">
+          <div className="relative w-1/2 md:flex-grow">
+            <Search 
+              size={20}
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-slate-500 dark:text-slate-100 !opacity-100 !block z-10"
+            />
+            <input
+              type="text"
+              placeholder={searchPlaceholder}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 h-11 md:h-12 bg-white dark:bg-slate-800/40 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
           </div>
-          <div className="relative">
-            <ArrowUpDown className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-gray-400 w-5 h-5 pointer-events-none" />
+          <div className="relative w-1/2 md:w-[180px] md:flex-none">
+            <ArrowUpDown 
+              size={20}
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-slate-500 dark:text-slate-100 !opacity-100 !block z-10"
+            />
             <select
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value as SortOption)}
-              className="pl-10 pr-8 py-3 bg-white dark:bg-slate-800/40 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer min-w-[180px]"
+              className="pl-10 pr-8 h-11 md:h-12 w-full bg-white dark:bg-slate-800/40 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-lg text-slate-900 dark:text-white text-xs md:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer"
             >
-              <option value="nextPayment">Next Payment</option>
-              <option value="priceHigh">Price (High to Low)</option>
-              <option value="alphabetical">Alphabetical (A-Z)</option>
+              <option value="nextPayment" className="truncate">Next Payment</option>
+              <option value="priceHigh" className="truncate">Price (High to Low)</option>
+              <option value="alphabetical" className="truncate">Alphabetical (A-Z)</option>
             </select>
           </div>
         </div>
 
         {/* Active Count */}
         {mounted && (
-          <p className="text-sm text-slate-500 text-center mb-6">
+          <p className="text-sm text-slate-500 dark:text-white/60 text-center mb-6">
             {activeCount} active {activeCount === 1 ? 'subscription' : 'subscriptions'}
           </p>
         )}
@@ -286,7 +308,7 @@ export default function DashboardTab() {
         <div className="space-y-4">
           {filteredAndSortedSubscriptions.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-slate-500 dark:text-gray-400 text-lg">
+              <p className="text-slate-500 dark:text-white/60 text-lg">
                 {searchQuery ? 'No subscriptions found matching your search.' : 'No subscriptions yet. Click the + button to add one!'}
               </p>
             </div>
@@ -298,12 +320,12 @@ export default function DashboardTab() {
               const currencySymbol = getCurrencySymbol(globalCurrency)
               
               return (
-                <div
-                  key={subscription.id}
-                  className={`bg-white dark:bg-slate-800/40 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm p-5 hover:border-slate-300 dark:hover:border-white/10 transition-colors ${
-                    !isActive ? 'opacity-50' : ''
-                  }`}
-                >
+              <div
+                key={subscription.id}
+                className={`bg-white dark:bg-slate-800/40 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm py-2 md:py-4 px-4 md:px-5 hover:border-slate-300 dark:hover:border-white/10 transition-colors ${
+                  !isActive ? 'opacity-50' : ''
+                }`}
+              >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       {/* Logo/Icon */}
@@ -321,7 +343,7 @@ export default function DashboardTab() {
                       {/* Subscription Info */}
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="text-slate-900 dark:text-white font-semibold text-lg">
+                          <h3 className="text-slate-900 dark:text-white font-semibold text-base md:text-lg">
                             {subscription.name}
                           </h3>
                           {isInTrial(subscription) && (
@@ -344,22 +366,22 @@ export default function DashboardTab() {
                     {/* Price and Actions */}
                     <div className="flex items-center gap-6">
                       <div className="text-right">
-                        <p className="text-slate-900 dark:text-white font-semibold text-lg">
+                        <p className="text-slate-900 dark:text-white font-semibold text-base md:text-xl">
                           {currencySymbol}{amountInGlobal.toFixed(2)}
                         </p>
                       </div>
                       
                       {/* Action Icons */}
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 md:gap-3">
                         <button
                           onClick={() => handleToggleActive(subscription)}
                           className="text-slate-500 dark:text-gray-400 hover:text-blue-400 transition-colors"
                           aria-label={isActive ? 'Pause subscription' : 'Resume subscription'}
                         >
                           {isActive ? (
-                            <PauseCircle className="w-5 h-5" />
+                            <PauseCircle className="w-4 h-4 md:w-5 md:h-5" />
                           ) : (
-                            <PlayCircle className="w-5 h-5" />
+                            <PlayCircle className="w-4 h-4 md:w-5 md:h-5" />
                           )}
                         </button>
                         <button
@@ -367,14 +389,14 @@ export default function DashboardTab() {
                           className="text-slate-500 dark:text-gray-400 hover:text-blue-400 transition-colors"
                           aria-label="Edit subscription"
                         >
-                          <Edit2 className="w-5 h-5" />
+                          <Edit2 className="w-4 h-4 md:w-5 md:h-5" />
                         </button>
                         <button
                           onClick={() => handleDeleteClick(subscription.id)}
                           className="text-slate-500 dark:text-gray-400 hover:text-red-400 transition-colors"
                           aria-label="Delete subscription"
                         >
-                          <Trash2 className="w-5 h-5" />
+                          <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
                         </button>
                       </div>
                     </div>

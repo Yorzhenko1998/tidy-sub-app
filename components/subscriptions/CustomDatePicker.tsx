@@ -13,7 +13,18 @@ export default function CustomDatePicker({ value, onChange, className = '' }: Cu
   const [isOpen, setIsOpen] = useState(false)
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const containerRef = useRef<HTMLDivElement>(null)
-  const selectedDate = value ? new Date(value) : new Date()
+  const toLocalDate = (dateValue: string) => {
+    if (!dateValue) return new Date()
+    const [year, month, day] = dateValue.split('-').map(Number)
+    return new Date(year, month - 1, day, 12)
+  }
+
+  const formatLocalISO = (date: Date) => {
+    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+    return local.toISOString().split('T')[0]
+  }
+
+  const selectedDate = value ? toLocalDate(value) : new Date()
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
@@ -55,7 +66,7 @@ export default function CustomDatePicker({ value, onChange, className = '' }: Cu
   }
 
   const handleDateSelect = (date: Date) => {
-    const dateString = date.toISOString().split('T')[0]
+    const dateString = formatLocalISO(date)
     onChange(dateString)
     setIsOpen(false)
   }
@@ -70,7 +81,7 @@ export default function CustomDatePicker({ value, onChange, className = '' }: Cu
 
   const formatDisplayDate = (dateString: string) => {
     if (!dateString) return ''
-    const date = new Date(dateString)
+    const date = toLocalDate(dateString)
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
@@ -131,7 +142,7 @@ export default function CustomDatePicker({ value, onChange, className = '' }: Cu
                 return <div key={`empty-${index}`} className="aspect-square" />
               }
 
-              const dateString = date.toISOString().split('T')[0]
+              const dateString = formatLocalISO(date)
               const isSelected = value === dateString
               const isToday = date.toDateString() === today.toDateString()
               const isCurrentMonth = date.getMonth() === currentMonth.getMonth()

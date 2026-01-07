@@ -43,7 +43,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="TidySub" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
       </head>
-      <body className={`${inter.className} bg-navy-950 text-gray-100 min-h-screen antialiased`}>
+      <body className={`${inter.className} bg-[#020617] text-gray-100 min-h-screen antialiased`}>
         <PWAProvider>
           <ThemeProvider>
             <SubscriptionProvider>
