@@ -45,7 +45,7 @@ export default function AddEditSubscriptionDialog({
     icon: '',
     color: colors[0],
     websiteUrl: '',
-    remindMe: '3',
+    remindMe: '1',
     trialPeriod: false,
     trialEndsOn: '',
     notes: ''
@@ -70,7 +70,7 @@ export default function AddEditSubscriptionDialog({
         icon: subIcon.startsWith('brand:') ? '' : subIcon,
         color: subscription.color,
         websiteUrl: subscription.websiteUrl || '',
-        remindMe: (subscription as any).remindMe || '3',
+        remindMe: (subscription as any).remindMe || '1',
         trialPeriod: (subscription as any).trialPeriod || false,
         trialEndsOn: (subscription as any).trialEndsOn ? toLocalISODate((subscription as any).trialEndsOn) : '',
         notes: (subscription as any).notes || ''
@@ -88,7 +88,7 @@ export default function AddEditSubscriptionDialog({
         icon: '',
         color: colors[0],
         websiteUrl: '',
-        remindMe: '3',
+        remindMe: '1',
         trialPeriod: false,
         trialEndsOn: '',
         notes: ''

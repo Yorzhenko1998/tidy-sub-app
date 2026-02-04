@@ -62,6 +62,12 @@ function normalizeSubscription(raw: unknown, index: number): Subscription | null
   if (typeof o.isActive === 'boolean') sub.isActive = o.isActive
   else sub.isActive = true
 
+  // Default reminder to 1 day before; preserve valid value from JSON if present
+  const validRemindMe = ['0', '1', '3', '7']
+  const rawRemindMe = o.remindMe
+  ;(sub as { remindMe?: string }).remindMe =
+    typeof rawRemindMe === 'string' && validRemindMe.includes(rawRemindMe) ? rawRemindMe : '1'
+
   return sub
 }
 
