@@ -20,12 +20,12 @@ export default function Navigation({ activeTab, onTabChange, onAddClick }: Navig
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/5 backdrop-blur-md border-t border-white/10">
-      <div className="max-w-4xl mx-auto px-4 py-2">
-        <div className="flex items-center justify-around">
+      <div className="w-full py-2">
+        <div className="flex items-center w-full">
           {/* Home */}
           <button
             onClick={() => onTabChange('home')}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors ${
+            className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors ${
               activeTab === 'home'
                 ? 'text-blue-400'
                 : 'text-gray-400 hover:text-gray-300'
@@ -39,7 +39,7 @@ export default function Navigation({ activeTab, onTabChange, onAddClick }: Navig
           {/* Analytics */}
           <button
             onClick={() => onTabChange('analytics')}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors ${
+            className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors ${
               activeTab === 'analytics'
                 ? 'text-blue-400'
                 : 'text-gray-400 hover:text-gray-300'
@@ -53,7 +53,7 @@ export default function Navigation({ activeTab, onTabChange, onAddClick }: Navig
           {/* Add Button in the middle */}
           <button
             onClick={onAddClick}
-            className="flex flex-col items-center gap-1 px-2 py-2"
+            className="flex-1 flex flex-col items-center justify-center gap-1 py-2"
             aria-label="Add subscription"
           >
             <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700 transition-colors -mt-6">
@@ -65,7 +65,7 @@ export default function Navigation({ activeTab, onTabChange, onAddClick }: Navig
           {/* Calendar */}
           <button
             onClick={() => onTabChange('calendar')}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors ${
+            className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors ${
               activeTab === 'calendar'
                 ? 'text-blue-400'
                 : 'text-gray-400 hover:text-gray-300'
@@ -79,7 +79,7 @@ export default function Navigation({ activeTab, onTabChange, onAddClick }: Navig
           {/* Settings */}
           <button
             onClick={() => onTabChange('settings')}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors ${
+            className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors ${
               activeTab === 'settings'
                 ? 'text-blue-400'
                 : 'text-gray-400 hover:text-gray-300'

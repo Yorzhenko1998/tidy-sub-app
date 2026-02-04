@@ -97,10 +97,10 @@ export default function AnalyticsTab() {
   // Prevent hydration mismatch - show loading state until mounted
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-[#020617] p-6 pb-24">
+      <div className="min-h-screen bg-slate-50 dark:bg-[#020617] px-4 md:px-6 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[max(env(safe-area-inset-top),2.5rem)] md:pt-8 overflow-x-hidden">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-[#0f172a] dark:bg-[#1e293b] rounded-xl mb-4 dark:border dark:border-slate-700/40 dark:border-b dark:border-white/5">
-            <h1 className="text-3xl font-bold tracking-tight !text-white text-center py-3">Your Statistics</h1>
+          <div className="bg-[#0f172a] dark:bg-slate-800/80 rounded-xl mb-4 mt-2 dark:border dark:border-slate-700/40 dark:border-b dark:border-white/5">
+            <h1 className="text-2xl font-bold tracking-tight !text-white text-center py-3">Your Statistics</h1>
           </div>
           <div className="grid grid-cols-3 gap-4 mb-6">
             <div className="text-center bg-white dark:bg-slate-800/40 rounded-2xl shadow-sm p-4">
@@ -122,11 +122,11 @@ export default function AnalyticsTab() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] px-4 md:px-6 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)] md:pt-8 overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] px-4 md:px-6 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[max(env(safe-area-inset-top),2.5rem)] md:pt-8 overflow-x-hidden">
       <div className="max-w-4xl mx-auto">
         {/* Header Block - Your Statistics */}
-        <div className="bg-[#0f172a] dark:bg-[#1e293b] rounded-xl mb-4 mt-2 dark:border dark:border-slate-700/40 dark:border-b dark:border-white/5">
-          <h1 className="text-3xl font-bold tracking-tight !text-white text-center py-3">Your Statistics</h1>
+        <div className="bg-[#0f172a] dark:bg-slate-800/80 rounded-xl mb-4 mt-2 dark:border dark:border-slate-700/40 dark:border-b dark:border-white/5">
+          <h1 className="text-2xl font-bold tracking-tight !text-white text-center py-3">Your Statistics</h1>
         </div>
 
         {/* Triple Summary Section */}
@@ -162,57 +162,64 @@ export default function AnalyticsTab() {
         </div>
 
         {/* Doughnut Chart Card */}
-        <div className="bg-white dark:bg-slate-800/40 dark:backdrop-blur-md border border-slate-200 dark:border dark:border-slate-700/40 rounded-2xl shadow-sm p-6 mb-6">
+        <div className="bg-white dark:bg-slate-800/40 dark:backdrop-blur-md border border-slate-200 dark:border dark:border-slate-700/40 rounded-2xl shadow-sm p-6 mb-6 min-h-[450px]">
           {chartData.length > 0 ? (
-            <div className="relative select-none pointer-events-none">
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart role="presentation" tabIndex={-1}>
-                  <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={70}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    cornerRadius={6}
-                    labelLine={false}
-                    label={false}
-                    fill="#8884d8"
-                    dataKey="value"
-                    stroke="none"
-                    isAnimationActive={false}
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="text-center">
-                  <p className="text-xs text-slate-500 dark:text-gray-400">Monthly total</p>
-                  <p className="font-bold text-lg md:text-2xl text-slate-900 dark:text-white">
-                    {getCurrencySymbol(globalCurrency)}{totalMonthly.toFixed(2)}
-                  </p>
+            <div className="flex flex-col items-center justify-center min-h-[402px]">
+              {/* Chart Container - pre-sized to prevent layout shift */}
+              <div className="relative select-none pointer-events-none w-full flex items-center justify-center min-h-[350px]">
+                <ResponsiveContainer width="100%" height={350}>
+                  <PieChart role="presentation" tabIndex={-1}>
+                    <Pie
+                      data={chartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={80}
+                      outerRadius={120}
+                      paddingAngle={5}
+                      cornerRadius={6}
+                      labelLine={false}
+                      label={false}
+                      fill="#8884d8"
+                      dataKey="value"
+                      stroke="none"
+                      isAnimationActive={false}
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                {/* Monthly Total Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="text-center">
+                    <p className="text-xs text-slate-500 dark:text-gray-400">Monthly total</p>
+                    <p className="font-bold text-lg md:text-2xl text-slate-900 dark:text-white">
+                      {getCurrencySymbol(globalCurrency)}{totalMonthly.toFixed(2)}
+                    </p>
+                  </div>
                 </div>
               </div>
               {/* Legend Below Chart */}
-              <div className="flex flex-wrap justify-center gap-4 mt-4">
-                {chartData.map((entry, index) => (
-                  <div key={entry.name} className="flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                    />
-                    <span className="text-sm text-slate-900 dark:text-slate-100 font-medium tracking-tight">
-                      {entry.name}
-                    </span>
-                  </div>
-                ))}
+              <div className="flex flex-wrap justify-center gap-4 mt-6 w-full">
+                {chartData.map((entry, index) => {
+                  const label = entry.name || entry.category || 'Other'
+                  return (
+                    <div key={`legend-${index}-${entry.name}`} className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                      />
+                      <span className="text-sm text-slate-600 dark:text-slate-100 font-medium tracking-tight">
+                        {label}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           ) : (
-            <div className="h-[300px] flex items-center justify-center text-slate-500 dark:text-gray-400">
+            <div className="min-h-[402px] flex items-center justify-center text-slate-500 dark:text-gray-400">
               No subscriptions to display
             </div>
           )}

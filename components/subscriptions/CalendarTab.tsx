@@ -211,11 +211,11 @@ export default function CalendarTab() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] px-4 md:px-6 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)] md:pt-8 overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] px-4 md:px-6 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[max(env(safe-area-inset-top),2.5rem)] md:pt-8 overflow-x-hidden">
       <div className="max-w-4xl mx-auto">
         {/* Header Block - Calendar */}
         <div className="bg-[#0f172a] dark:bg-slate-800/80 rounded-xl mb-4 mt-2 dark:border dark:border-slate-700/40 dark:border-b dark:border-white/5">
-          <h1 className="text-3xl font-bold tracking-tight !text-white text-center py-3">Calendar</h1>
+          <h1 className="text-2xl font-bold tracking-tight !text-white text-center py-3">Calendar</h1>
         </div>
 
         <div className="md:flex md:items-start md:gap-4">

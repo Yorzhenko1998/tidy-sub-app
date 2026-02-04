@@ -32,6 +32,7 @@ interface SubscriptionContextType {
   addSubscription: (subscription: Omit<Subscription, 'id'>) => void
   updateSubscription: (id: string, subscription: Omit<Subscription, 'id'>) => void
   deleteSubscription: (id: string) => void
+  replaceSubscriptions: (subscriptions: Subscription[]) => void
   addCategory: (category: string) => void
   deleteCategory: (category: string) => void
 }
@@ -308,6 +309,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     setSubscriptions((prev) => prev.filter((sub) => sub.id !== id))
   }
 
+  const replaceSubscriptions = (newSubscriptions: Subscription[]) => {
+    setSubscriptions(newSubscriptions)
+  }
+
   const addCategory = (category: string) => {
     const trimmedCategory = category.trim()
     if (trimmedCategory && !categories.includes(trimmedCategory)) {
@@ -339,6 +344,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         addSubscription,
         updateSubscription,
         deleteSubscription,
+        replaceSubscriptions,
         addCategory,
         deleteCategory
       }}

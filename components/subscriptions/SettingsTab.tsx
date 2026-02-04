@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Download, Upload, Trash2, Sun, Moon, Monitor } from 'lucide-react'
 import { useSubscriptions } from '@/contexts/SubscriptionContext'
+import type { Subscription } from '@/contexts/SubscriptionContext'
 
 // Тимчасова функція-заглушка для дозволу на пуші
 const requestNotificationPermission = async () => {
@@ -11,6 +12,58 @@ const requestNotificationPermission = async () => {
     console.log('Push permission:', permission);
   }
 };
+
+/** Normalize a raw parsed item to Subscription shape (export-compatible). */
+function normalizeSubscription(raw: unknown, index: number): Subscription | null {
+  if (!raw || typeof raw !== 'object') return null
+  const o = raw as Record<string, unknown>
+
+  const id = typeof o.id === 'string' ? o.id : `import-${Date.now()}-${index}`
+  const name = typeof o.name === 'string' ? o.name : ''
+  if (!name) return null
+
+  let amount = 0
+  if (typeof o.amount === 'number' && !Number.isNaN(o.amount)) amount = o.amount
+  else if (typeof o.amount === 'string') amount = parseFloat(o.amount) || 0
+
+  const currency = typeof o.currency === 'string' ? o.currency : 'USD'
+  const billingInterval =
+    o.billingInterval === 'Yearly' ? 'Yearly' : 'Monthly'
+
+  let startDate = ''
+  if (typeof o.startDate === 'string') {
+    startDate = o.startDate
+  } else if (o.startDate instanceof Date) {
+    startDate = o.startDate.toISOString().split('T')[0]
+  } else if (typeof o.startDate === 'number') {
+    startDate = new Date(o.startDate).toISOString().split('T')[0]
+  } else {
+    startDate = new Date().toISOString().split('T')[0]
+  }
+
+  const category = typeof o.category === 'string' ? o.category : ''
+  const icon = typeof o.icon === 'string' ? o.icon : 'money'
+  const color = typeof o.color === 'string' ? o.color : '#3B82F6'
+
+  const sub: Subscription = {
+    id,
+    name,
+    amount,
+    currency,
+    billingInterval,
+    startDate,
+    category,
+    icon,
+    color
+  }
+  if (typeof o.websiteUrl === 'string') sub.websiteUrl = o.websiteUrl
+  if (typeof o.logoUrl === 'string') sub.logoUrl = o.logoUrl
+  if (typeof o.brandIconUrl === 'string') sub.brandIconUrl = o.brandIconUrl
+  if (typeof o.isActive === 'boolean') sub.isActive = o.isActive
+  else sub.isActive = true
+
+  return sub
+}
 
 export default function SettingsTab() {
   const { 
@@ -21,7 +74,8 @@ export default function SettingsTab() {
     theme, 
     setTheme,
     pushNotificationsEnabled,
-    setPushNotificationsEnabled
+    setPushNotificationsEnabled,
+    replaceSubscriptions
   } = useSubscriptions()
 
   const handleExport = () => {
@@ -41,22 +95,44 @@ export default function SettingsTab() {
     input.accept = 'application/json'
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0]
-      if (file) {
-        const reader = new FileReader()
-        reader.onload = (event) => {
-          try {
-            const imported = JSON.parse(event.target?.result as string)
-            if (Array.isArray(imported)) {
-              // In a real app, you'd want to add these to the context
-              console.log('Imported subscriptions:', imported)
-              alert('Import functionality would be implemented here')
-            }
-          } catch (error) {
-            alert('Invalid file format')
+      if (!file) return
+
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        try {
+          const text = event.target?.result
+          if (typeof text !== 'string') {
+            alert('Could not read file.')
+            return
           }
+          const parsed: unknown = JSON.parse(text)
+
+          // Support both raw array (export format) and { subscriptions: [] }
+          let rawList: unknown[] = []
+          if (Array.isArray(parsed)) {
+            rawList = parsed
+          } else if (parsed && typeof parsed === 'object' && 'subscriptions' in parsed && Array.isArray((parsed as { subscriptions: unknown[] }).subscriptions)) {
+            rawList = (parsed as { subscriptions: unknown[] }).subscriptions
+          } else {
+            alert('Invalid file format. Expected a JSON array of subscriptions.')
+            return
+          }
+
+          const normalized: Subscription[] = []
+          for (let i = 0; i < rawList.length; i++) {
+            const sub = normalizeSubscription(rawList[i], i)
+            if (sub) normalized.push(sub)
+          }
+
+          replaceSubscriptions(normalized)
+          alert(`Import successful. Loaded ${normalized.length} subscription${normalized.length === 1 ? '' : 's'}.`)
+        } catch (err) {
+          console.error('Import error:', err)
+          alert('Invalid file format or corrupted JSON.')
         }
-        reader.readAsText(file)
       }
+      reader.onerror = () => alert('Could not read file.')
+      reader.readAsText(file, 'UTF-8')
     }
     input.click()
   }
@@ -69,11 +145,11 @@ export default function SettingsTab() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] px-4 md:px-6 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)] md:pt-8 overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] px-4 md:px-6 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[max(env(safe-area-inset-top),2.5rem)] md:pt-8 overflow-x-hidden">
       <div className="max-w-4xl mx-auto">
         {/* Header Block - Settings */}
-        <div className="bg-[#0f172a] dark:bg-slate-800/80 rounded-xl mb-4 dark:border dark:border-slate-700/40 dark:border-b dark:border-white/5">
-          <h1 className="text-3xl font-bold tracking-tight !text-white text-center py-3">Settings</h1>
+        <div className="bg-[#0f172a] dark:bg-slate-800/80 rounded-xl mb-4 mt-2 dark:border dark:border-slate-700/40 dark:border-b dark:border-white/5">
+          <h1 className="text-2xl font-bold tracking-tight !text-white text-center py-3">Settings</h1>
         </div>
 
         {/* Currency */}
