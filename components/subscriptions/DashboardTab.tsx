@@ -39,6 +39,39 @@ export default function DashboardTab() {
   const [sortOption, setSortOption] = useState<SortOption>('nextPayment')
   const [mounted, setMounted] = useState(false)
   const [searchPlaceholder, setSearchPlaceholder] = useState('Search')
+  
+  // Swipe-to-action state
+  const [swipeActiveId, setSwipeActiveId] = useState<string | null>(null)
+  const [swipeStartX, setSwipeStartX] = useState<number | null>(null)
+  const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>({})
+  
+  const MAX_SWIPE = 160 // pixels revealed on full swipe
+  const SWIPE_THRESHOLD = 80 // how far you must swipe to "lock" it open
+  
+  const handleTouchStart = (id: string, clientX: number) => {
+    setSwipeActiveId(id)
+    setSwipeStartX(clientX)
+  }
+  
+  const handleTouchMove = (id: string, clientX: number) => {
+    if (swipeActiveId !== id || swipeStartX == null) return
+    const deltaX = clientX - swipeStartX
+    if (deltaX > 0) {
+      // no right-swipe; keep at 0
+      setSwipeOffsets(prev => ({ ...prev, [id]: 0 }))
+      return
+    }
+    const clamped = Math.max(deltaX, -MAX_SWIPE)
+    setSwipeOffsets(prev => ({ ...prev, [id]: clamped }))
+  }
+  
+  const handleTouchEnd = (id: string) => {
+    const current = swipeOffsets[id] ?? 0
+    const shouldOpen = current <= -SWIPE_THRESHOLD
+    setSwipeOffsets(prev => ({ ...prev, [id]: shouldOpen ? -MAX_SWIPE : 0 }))
+    setSwipeActiveId(null)
+    setSwipeStartX(null)
+  }
 
   // Prevent hydration mismatch and set responsive placeholder
   useEffect(() => {
@@ -260,10 +293,12 @@ export default function DashboardTab() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#020617] px-4 md:px-6 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[max(env(safe-area-inset-top),2.5rem)] md:pt-8 overflow-x-hidden">
       <div className="max-w-4xl mx-auto">
-        {/* Header Block - Your Subscriptions */}
-        <div className="bg-[#0f172a] dark:bg-slate-800/80 rounded-xl mb-4 mt-2 dark:border dark:border-slate-700/40 dark:border-b dark:border-white/5">
-          <h1 className="text-2xl font-bold tracking-tight !text-white text-center py-3">Your Subscriptions</h1>
-        </div>
+        {/* Header - Clean Typography */}
+        <header className="mt-2 mb-4">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 text-center">
+            Your Subscriptions
+          </h1>
+        </header>
 
         {/* Search Bar and Sort */}
         <div className="flex flex-row items-center w-full gap-2 md:gap-3 mb-2">
@@ -277,7 +312,7 @@ export default function DashboardTab() {
               placeholder={searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 h-11 md:h-12 bg-white dark:bg-slate-800/40 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 h-11 md:h-12 rounded-full bg-white/90 dark:bg-slate-800/60 dark:backdrop-blur-md border border-slate-200/70 dark:border-white/5 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-transparent"
             />
           </div>
           <div className="relative w-1/2 md:w-[180px] md:flex-none">
@@ -318,86 +353,110 @@ export default function DashboardTab() {
               // Convert to global currency for display
               const amountInGlobal = convertCurrency(subscription.amount, subscription.currency, globalCurrency)
               const currencySymbol = getCurrencySymbol(globalCurrency)
+              const nextPaymentDate = getNextPaymentDate(subscription)
+              const nextLabel = nextPaymentDate.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+              })
               
               return (
-              <div
-                key={subscription.id}
-                className={`bg-white dark:bg-slate-800/40 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm py-2 md:py-4 px-4 md:px-5 hover:border-slate-300 dark:hover:border-white/10 transition-colors ${
-                  !isActive ? 'opacity-50' : ''
-                }`}
-              >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      {/* Logo/Icon */}
-                      <div
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 overflow-hidden ${
-                          subscription.logoUrl || subscription.brandIconUrl
-                            ? 'bg-white dark:bg-zinc-800 border border-black/5 dark:border-white/10 p-1.5'
-                            : ''
-                        }`}
-                        style={!subscription.logoUrl && !subscription.brandIconUrl ? { backgroundColor: subscription.color + '20' } : undefined}
-                      >
-                        <SubscriptionIcon subscription={subscription} />
-                      </div>
-                      
-                      {/* Subscription Info */}
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-slate-900 dark:text-white font-semibold text-base md:text-lg">
-                            {subscription.name}
-                          </h3>
-                          {isInTrial(subscription) && (
-                            <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs font-medium rounded">
-                              Trial
-                            </span>
-                          )}
-                          {!isActive && (
-                            <span className="px-2 py-0.5 bg-slate-500/20 text-slate-400 dark:text-slate-500 text-xs font-medium rounded">
-                              Paused
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-slate-500 dark:text-gray-400 text-sm">
-                          {subscription.billingInterval}
-                        </p>
-                      </div>
-                    </div>
+                <div key={subscription.id} className="relative overflow-hidden">
+                  {/* Swipe actions revealed when swiped left */}
+                  <div className="absolute inset-y-0 right-0 flex items-center gap-2 pr-4">
+                    <button
+                      onClick={() => {
+                        setSwipeOffsets(prev => ({ ...prev, [subscription.id]: 0 }))
+                        handleEditClick(subscription)
+                      }}
+                      className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm hover:bg-blue-700 transition-colors"
+                      aria-label="Edit subscription"
+                    >
+                      <Edit2 className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSwipeOffsets(prev => ({ ...prev, [subscription.id]: 0 }))
+                        handleToggleActive(subscription)
+                      }}
+                      className="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-sm hover:bg-amber-600 transition-colors"
+                      aria-label={isActive ? 'Pause subscription' : 'Resume subscription'}
+                    >
+                      {isActive ? (
+                        <PauseCircle className="w-5 h-5" />
+                      ) : (
+                        <PlayCircle className="w-5 h-5" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSwipeOffsets(prev => ({ ...prev, [subscription.id]: 0 }))
+                        handleDeleteClick(subscription.id)
+                      }}
+                      className="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center shadow-sm hover:bg-red-700 transition-colors"
+                      aria-label="Delete subscription"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
 
-                    {/* Price and Actions */}
-                    <div className="flex items-center gap-6">
-                      <div className="text-right">
-                        <p className="text-slate-900 dark:text-white font-semibold text-base md:text-xl">
-                          {currencySymbol}{amountInGlobal.toFixed(2)}
-                        </p>
+                  {/* Foreground card that actually moves */}
+                  <div
+                    className={`bg-white dark:bg-slate-800/40 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm py-3 px-4 md:py-4 md:px-5 transition-transform duration-200 ${
+                      !isActive ? 'opacity-50' : ''
+                    }`}
+                    style={{ transform: `translateX(${swipeOffsets[subscription.id] ?? 0}px)` }}
+                    onTouchStart={(e) => handleTouchStart(subscription.id, e.touches[0].clientX)}
+                    onTouchMove={(e) => handleTouchMove(subscription.id, e.touches[0].clientX)}
+                    onTouchEnd={() => handleTouchEnd(subscription.id)}
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      {/* Left: logo + title + category */}
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div
+                          className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 overflow-hidden ${
+                            subscription.logoUrl || subscription.brandIconUrl
+                              ? 'bg-white dark:bg-zinc-800 border border-black/5 dark:border-white/10 p-1.5'
+                              : ''
+                          }`}
+                          style={
+                            !subscription.logoUrl && !subscription.brandIconUrl
+                              ? { backgroundColor: subscription.color + '20' }
+                              : undefined
+                          }
+                        >
+                          <SubscriptionIcon subscription={subscription} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-slate-900 dark:text-white font-semibold text-base md:text-lg truncate">
+                              {subscription.name}
+                            </h3>
+                            {isInTrial(subscription) && (
+                              <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-[10px] font-medium rounded">
+                                Trial
+                              </span>
+                            )}
+                            {!isActive && (
+                              <span className="px-2 py-0.5 bg-slate-500/15 text-slate-500 text-[10px] font-medium rounded">
+                                Paused
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-gray-400 truncate">
+                            {subscription.category || subscription.billingInterval}
+                          </p>
+                        </div>
                       </div>
-                      
-                      {/* Action Icons */}
-                      <div className="flex items-center gap-2 md:gap-3">
-                        <button
-                          onClick={() => handleToggleActive(subscription)}
-                          className="text-slate-500 dark:text-gray-400 hover:text-blue-400 transition-colors"
-                          aria-label={isActive ? 'Pause subscription' : 'Resume subscription'}
-                        >
-                          {isActive ? (
-                            <PauseCircle className="w-4 h-4 md:w-5 md:h-5" />
-                          ) : (
-                            <PlayCircle className="w-4 h-4 md:w-5 md:h-5" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleEditClick(subscription)}
-                          className="text-slate-500 dark:text-gray-400 hover:text-blue-400 transition-colors"
-                          aria-label="Edit subscription"
-                        >
-                          <Edit2 className="w-4 h-4 md:w-5 md:h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(subscription.id)}
-                          className="text-slate-500 dark:text-gray-400 hover:text-red-400 transition-colors"
-                          aria-label="Delete subscription"
-                        >
-                          <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
-                        </button>
+
+                      {/* Right: price + next date */}
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">
+                          {currencySymbol}
+                          {amountInGlobal.toFixed(2)}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
+                          {nextLabel}
+                        </p>
                       </div>
                     </div>
                   </div>

@@ -124,10 +124,12 @@ export default function AnalyticsTab() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#020617] px-4 md:px-6 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[max(env(safe-area-inset-top),2.5rem)] md:pt-8 overflow-x-hidden">
       <div className="max-w-4xl mx-auto">
-        {/* Header Block - Your Statistics */}
-        <div className="bg-[#0f172a] dark:bg-slate-800/80 rounded-xl mb-4 mt-2 dark:border dark:border-slate-700/40 dark:border-b dark:border-white/5">
-          <h1 className="text-2xl font-bold tracking-tight !text-white text-center py-3">Your Statistics</h1>
-        </div>
+        {/* Header - Clean Typography */}
+        <header className="mt-2 mb-4">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 text-center">
+            Your Statistics
+          </h1>
+        </header>
 
         {/* Triple Summary Section */}
         <div className="grid grid-cols-3 gap-4 mb-6">
@@ -173,7 +175,7 @@ export default function AnalyticsTab() {
                       data={chartData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={80}
+                      innerRadius={90}
                       outerRadius={120}
                       paddingAngle={5}
                       cornerRadius={6}
@@ -194,28 +196,48 @@ export default function AnalyticsTab() {
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-center">
                     <p className="text-xs text-slate-500 dark:text-gray-400">Monthly total</p>
-                    <p className="font-bold text-lg md:text-2xl text-slate-900 dark:text-white">
+                    <p className="font-extrabold text-2xl md:text-3xl text-slate-900 dark:text-white">
                       {getCurrencySymbol(globalCurrency)}{totalMonthly.toFixed(2)}
                     </p>
                   </div>
                 </div>
               </div>
-              {/* Legend Below Chart */}
-              <div className="flex flex-wrap justify-center gap-4 mt-6 w-full">
-                {chartData.map((entry, index) => {
-                  const label = entry.name || entry.category || 'Other'
-                  return (
-                    <div key={`legend-${index}-${entry.name}`} className="flex items-center gap-2">
+              {/* Vertical Spending Breakdown */}
+              <div className="mt-6 w-full">
+                {(() => {
+                  const totalValue = chartData.reduce((sum, d) => sum + d.value, 0)
+                  return chartData.map((entry, index) => {
+                    const label = entry.name || (entry as any).category || 'Other'
+                    const percent =
+                      totalValue > 0 ? ((entry.value / totalValue) * 100).toFixed(1) : '0.0'
+                    return (
                       <div
-                        className="w-3 h-3 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                      />
-                      <span className="text-sm text-slate-600 dark:text-slate-100 font-medium tracking-tight">
-                        {label}
-                      </span>
-                    </div>
-                  )
-                })}
+                        key={`breakdown-${index}-${label}`}
+                        className={`flex items-center gap-3 py-2 ${
+                          index > 0
+                            ? 'border-t border-slate-100 dark:border-slate-700/40'
+                            : ''
+                        }`}
+                      >
+                        <div
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        />
+                        <span className="text-sm text-slate-900 dark:text-slate-100 font-medium truncate">
+                          {label}
+                        </span>
+                        <div className="flex-1" />
+                        <span className="text-sm text-slate-900 dark:text-slate-100 font-semibold">
+                          {getCurrencySymbol(globalCurrency)}
+                          {entry.value.toFixed(2)}
+                        </span>
+                        <span className="text-xs text-slate-500 dark:text-gray-400 ml-2">
+                          {percent}%
+                        </span>
+                      </div>
+                    )
+                  })
+                })()}
               </div>
             </div>
           ) : (
