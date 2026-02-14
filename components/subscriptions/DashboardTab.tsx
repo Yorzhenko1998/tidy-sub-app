@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, memo } from 'react'
 import { Search, Edit2, Trash2, ArrowUpDown, PauseCircle, PlayCircle } from 'lucide-react'
 import { useSubscriptions } from '@/contexts/SubscriptionContext'
 import AddEditSubscriptionDialog from './AddEditSubscriptionDialog'
@@ -12,6 +12,51 @@ const EXCHANGE_RATES: Record<string, number> = {
   EUR: 1.09,
   GBP: 1.27
 }
+
+// Map icon IDs to emojis (fallback)
+const getIconDisplay = (iconId: string): string => {
+  const iconMap: Record<string, string> = {
+    money: '💰',
+    building: '🏢',
+    bank: '🏦',
+    car: '🚗',
+    investment: '📈',
+    utilities: '⚡',
+    health: '❤️',
+    work: '💼',
+    entertainment: '▶️',
+    'digital-services': '💻'
+  }
+  return iconMap[iconId] || '📦'
+}
+
+// Memoized icon component to prevent flicker when sibling cards re-render
+const SubscriptionIcon = memo(function SubscriptionIcon({ subscription }: { subscription: Subscription }) {
+  const [logoError, setLogoError] = useState(false)
+  const [brandError, setBrandError] = useState(false)
+
+  if (subscription.logoUrl && !logoError) {
+    return (
+      <img
+        src={subscription.logoUrl}
+        alt={subscription.name}
+        className="w-full h-full object-contain"
+        onError={() => setLogoError(true)}
+      />
+    )
+  }
+  if (subscription.brandIconUrl && !brandError && (!subscription.logoUrl || logoError)) {
+    return (
+      <img
+        src={subscription.brandIconUrl}
+        alt={subscription.name}
+        className="w-full h-full object-contain"
+        onError={() => setBrandError(true)}
+      />
+    )
+  }
+  return <span>{getIconDisplay(subscription.icon)}</span>
+})
 
 // Get currency symbol
 const getCurrencySymbol = (currency: string): string => {
@@ -227,68 +272,18 @@ export default function DashboardTab() {
     setEditingSubscription(null)
   }
 
-  // Map icon IDs to emojis for display (fallback only)
-  const getIconDisplay = (iconId: string) => {
-    const iconMap: Record<string, string> = {
-      money: '💰',
-      building: '🏢',
-      bank: '🏦',
-      car: '🚗',
-      investment: '📈',
-      utilities: '⚡',
-      health: '❤️',
-      work: '💼',
-      entertainment: '▶️',
-      'digital-services': '💻'
+  // Mouse drag support for swipe on desktop
+  useEffect(() => {
+    if (swipeActiveId == null || swipeStartX == null) return
+    const handleMouseMove = (e: MouseEvent) => handleTouchMove(swipeActiveId!, e.clientX)
+    const handleMouseUp = () => handleTouchEnd(swipeActiveId!)
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
     }
-    return iconMap[iconId] || '📦'
-  }
-
-  // Subscription Icon Component with strict priority: logoUrl > brandIconUrl > categoryIcon
-  const SubscriptionIcon = ({ subscription }: { subscription: Subscription }) => {
-    const [logoError, setLogoError] = useState(false)
-    const [brandError, setBrandError] = useState(false)
-
-    // Strict Priority Order: logoUrl || brandIconUrl || categoryIcon
-    const displayIcon = subscription.logoUrl || subscription.brandIconUrl || null
-
-    // Priority 1: logoUrl (Automatic - from website URL favicon)
-    // This MUST override category icon even if category is selected
-    if (subscription.logoUrl && !logoError) {
-      return (
-        <img
-          src={subscription.logoUrl}
-          alt={subscription.name}
-          className="w-full h-full object-contain"
-          onError={() => setLogoError(true)}
-        />
-      )
-    }
-
-    // Priority 2: brandIconUrl (Manual - user selected brand icon)
-    // Only show if logoUrl doesn't exist or failed to load
-    if (subscription.brandIconUrl && !brandError && (!subscription.logoUrl || logoError)) {
-      return (
-        <img
-          src={subscription.brandIconUrl}
-          alt={subscription.name}
-          className="w-full h-full object-contain"
-          onError={() => setBrandError(true)}
-        />
-      )
-    }
-
-    // Priority 3: categoryIcon (Fallback - generic category icon)
-    // ONLY show if both logoUrl and brandIconUrl are missing or failed
-    if (!displayIcon || (logoError && brandError)) {
-      return <span>{getIconDisplay(subscription.icon)}</span>
-    }
-
-    // Should not reach here, but fallback to category icon
-    return <span>{getIconDisplay(subscription.icon)}</span>
-  }
-
-
+  }, [swipeActiveId, swipeStartX])
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#020617] px-4 md:px-6 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[max(env(safe-area-inset-top),2.5rem)] md:pt-8 overflow-x-hidden">
@@ -361,14 +356,14 @@ export default function DashboardTab() {
               
               return (
                 <div key={subscription.id} className="relative overflow-hidden">
-                  {/* Swipe actions revealed when swiped left */}
+                  {/* Swipe actions revealed when swiped left - glassmorphism + glow */}
                   <div className="absolute inset-y-0 right-0 flex items-center gap-2 pr-4">
                     <button
                       onClick={() => {
                         setSwipeOffsets(prev => ({ ...prev, [subscription.id]: 0 }))
                         handleEditClick(subscription)
                       }}
-                      className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm hover:bg-blue-700 transition-colors"
+                      className="w-10 h-10 rounded-full bg-blue-600/90 dark:bg-blue-500/80 backdrop-blur-md border border-white/20 shadow-lg shadow-blue-500/25 text-white flex items-center justify-center hover:bg-blue-600 hover:shadow-blue-500/40 transition-all"
                       aria-label="Edit subscription"
                     >
                       <Edit2 className="w-5 h-5" />
@@ -378,7 +373,7 @@ export default function DashboardTab() {
                         setSwipeOffsets(prev => ({ ...prev, [subscription.id]: 0 }))
                         handleToggleActive(subscription)
                       }}
-                      className="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-sm hover:bg-amber-600 transition-colors"
+                      className="w-10 h-10 rounded-full bg-amber-500/90 dark:bg-amber-500/80 backdrop-blur-md border border-white/20 shadow-lg shadow-amber-500/25 text-white flex items-center justify-center hover:bg-amber-500 hover:shadow-amber-500/40 transition-all"
                       aria-label={isActive ? 'Pause subscription' : 'Resume subscription'}
                     >
                       {isActive ? (
@@ -392,7 +387,7 @@ export default function DashboardTab() {
                         setSwipeOffsets(prev => ({ ...prev, [subscription.id]: 0 }))
                         handleDeleteClick(subscription.id)
                       }}
-                      className="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center shadow-sm hover:bg-red-700 transition-colors"
+                      className="w-10 h-10 rounded-full bg-red-600/90 dark:bg-red-500/80 backdrop-blur-md border border-white/20 shadow-lg shadow-red-500/25 text-white flex items-center justify-center hover:bg-red-600 hover:shadow-red-500/40 transition-all"
                       aria-label="Delete subscription"
                     >
                       <Trash2 className="w-5 h-5" />
@@ -401,13 +396,14 @@ export default function DashboardTab() {
 
                   {/* Foreground card that actually moves */}
                   <div
-                    className={`bg-white dark:bg-slate-800/40 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm py-3 px-4 md:py-4 md:px-5 transition-transform duration-200 ${
+                    className={`bg-white dark:bg-slate-800/40 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm py-3 px-4 md:py-4 md:px-5 transition-transform duration-200 select-none cursor-grab active:cursor-grabbing ${
                       !isActive ? 'opacity-50' : ''
                     }`}
                     style={{ transform: `translateX(${swipeOffsets[subscription.id] ?? 0}px)` }}
                     onTouchStart={(e) => handleTouchStart(subscription.id, e.touches[0].clientX)}
                     onTouchMove={(e) => handleTouchMove(subscription.id, e.touches[0].clientX)}
                     onTouchEnd={() => handleTouchEnd(subscription.id)}
+                    onMouseDown={(e) => handleTouchStart(subscription.id, e.clientX)}
                   >
                     <div className="flex items-center justify-between gap-4">
                       {/* Left: logo + title + category */}

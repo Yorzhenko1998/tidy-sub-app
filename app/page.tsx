@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import Navigation, { Tab } from '@/components/Navigation'
 import DashboardTab from '@/components/subscriptions/DashboardTab'
 import AnalyticsTab from '@/components/subscriptions/AnalyticsTab'
@@ -38,7 +39,15 @@ export default function Page() {
 
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab)
+    window.scrollTo({ top: 0, behavior: 'instant' })
   }
+
+  // Reset scroll when tab changes (handles programmatic changes)
+  useEffect(() => {
+    if (hasMounted) {
+      window.scrollTo({ top: 0, behavior: 'instant' })
+    }
+  }, [activeTab, hasMounted])
 
   const handleAddClick = () => {
     setIsDialogOpen(true)
@@ -46,6 +55,12 @@ export default function Page() {
 
   const handleDialogClose = () => {
     setIsDialogOpen(false)
+  }
+
+  const tabVariants = {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 }
   }
 
   const renderTab = () => {
@@ -66,15 +81,30 @@ export default function Page() {
   // Prevent hydration mismatch - only render dynamic content after mount
   if (!hasMounted) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex items-center justify-center pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+      <main className="max-w-[480px] mx-auto min-h-screen shadow-2xl relative bg-slate-50 dark:bg-[#020617] overflow-x-hidden flex items-center justify-center pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
         <div className="text-slate-500 dark:text-gray-400">Loading...</div>
-      </div>
+      </main>
     )
   }
 
   return (
-    <>
-      {renderTab()}
+    <main className="max-w-[480px] mx-auto min-h-screen shadow-2xl relative bg-slate-50 dark:bg-[#020617] overflow-x-hidden">
+      <div className="min-h-[calc(100vh-80px)] overflow-x-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={tabVariants}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            layout
+            className="w-full min-h-[calc(100vh-80px)]"
+          >
+            {renderTab()}
+          </motion.div>
+        </AnimatePresence>
+      </div>
       <Navigation
         activeTab={activeTab}
         onTabChange={handleTabChange}
@@ -86,6 +116,6 @@ export default function Page() {
           onClose={handleDialogClose}
         />
       )}
-    </>
+    </main>
   )
 }
