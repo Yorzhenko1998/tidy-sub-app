@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { X, Search } from 'lucide-react'
 import { useSubscriptions } from '@/contexts/SubscriptionContext'
 import type { Subscription } from '@/contexts/SubscriptionContext'
@@ -106,12 +107,8 @@ export default function AddEditSubscriptionDialog({
     }
   }, [globalCurrency, subscription, isOpen])
 
-  // Update currency field when globalCurrency changes (only for new subscriptions)
-  useEffect(() => {
-    if (!subscription && isOpen && formData.currency !== globalCurrency) {
-      setFormData((prev) => ({ ...prev, currency: globalCurrency }))
-    }
-  }, [globalCurrency, subscription, isOpen])
+  const inputClass = 'w-full h-12 px-4 bg-white/5 dark:bg-black/20 border border-white/10 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent'
+  const inputClassError = inputClass + ' border-red-500 dark:border-red-500/70'
 
   if (!isOpen) return null
 
@@ -248,30 +245,49 @@ export default function AddEditSubscriptionDialog({
   }
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[100] p-4">
-      <div className="bg-white dark:bg-slate-900/80 dark:backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-md max-h-[90vh] flex flex-col shadow-2xl">
-        {/* Header - Fixed at top */}
-        <div className="bg-[#0f172a] dark:bg-slate-800/80 rounded-t-3xl flex items-center justify-between p-6 border-b border-slate-200 dark:border-gray-800 flex-shrink-0">
-          <h2 className="text-xl font-bold tracking-tight !text-white text-center flex-1">
-            {subscription ? 'Edit Subscription' : 'Add Subscription'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-white/80 hover:text-white transition-colors ml-4"
-            aria-label="Close dialog"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto">
+      {/* Soft glow orbs - top-right and bottom-left */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-500/20 dark:bg-blue-500/15 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-500/15 dark:bg-indigo-500/10 rounded-full blur-3xl" />
+      </div>
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-slate-900/50 dark:bg-slate-950/60 backdrop-blur-md" aria-hidden />
+
+      <AnimatePresence>
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 20, opacity: 0 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
+          className="relative bg-white/10 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-white/20 rounded-3xl w-full max-w-md max-h-[90vh] flex flex-col shadow-2xl"
+        >
+          {/* Pull-to-dismiss indicator - iOS style */}
+          <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+            <div className="w-10 h-1 rounded-full bg-slate-400/60 dark:bg-white/30" aria-hidden />
+          </div>
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 pb-4 flex-shrink-0">
+            <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50 flex-1 text-center">
+              {subscription ? 'Edit Subscription' : 'Add Subscription'}
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-2 -m-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/10 dark:hover:bg-white/5 transition-colors"
+              aria-label="Close dialog"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
 
         {/* Scrollable Form Content */}
-        <div className="flex-1 overflow-y-auto pb-6">
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
           <form onSubmit={handleSubmit} id="subscription-form">
-            <div className="p-6 space-y-6 rounded-b-3xl">
+            <div className="space-y-6">
             {/* Row 1: Name + Icon Preview */}
             <div className="flex items-end gap-4">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Name
                 </label>
                 <input
@@ -283,9 +299,7 @@ export default function AddEditSubscriptionDialog({
                       setErrors({ ...errors, name: undefined })
                     }
                   }}
-                  className={`w-full h-12 px-4 bg-white dark:bg-slate-800/50 dark:backdrop-blur-md border rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent ${
-                    errors.name ? 'border-red-500' : 'border-slate-200 dark:border-white/5'
-                  }`}
+                  className={errors.name ? inputClassError : inputClass}
                   placeholder="Enter subscription name"
                 />
                 {errors.name && (
@@ -308,29 +322,24 @@ export default function AddEditSubscriptionDialog({
 
             {/* Website URL Field */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
-                Website URL <span className="text-slate-400 dark:text-gray-500 text-xs">(optional)</span>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Website URL <span className="text-slate-400 dark:text-slate-500 text-xs">(optional)</span>
               </label>
               <input
                 type="text"
                 value={formData.websiteUrl}
                 onChange={(e) => {
-                  let url = e.target.value.trim()
-                  // Auto-add https:// if missing protocol
-                  if (url && !url.match(/^https?:\/\//i)) {
-                    // Don't modify the input value, just store it as-is
-                    // We'll normalize it when saving
-                  }
+                  const url = e.target.value.trim()
                   setFormData({ ...formData, websiteUrl: url })
                 }}
-                className="w-full h-12 px-4 bg-white dark:bg-slate-800/50 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
+                className={inputClass}
                 placeholder="example.com or https://example.com"
               />
             </div>
 
             {/* Row 2: Category */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Category
               </label>
               <CategorySelect
@@ -342,7 +351,7 @@ export default function AddEditSubscriptionDialog({
             {/* Row 3: Amount + Currency */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Amount
                 </label>
                 <input
@@ -356,9 +365,7 @@ export default function AddEditSubscriptionDialog({
                       setErrors({ ...errors, amount: undefined })
                     }
                   }}
-                  className={`w-full h-12 px-4 bg-white dark:bg-slate-800/50 dark:backdrop-blur-md border rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-lg font-semibold ${
-                    errors.amount ? 'border-red-500' : 'border-slate-200 dark:border-white/5'
-                  }`}
+                  className={`${errors.amount ? inputClassError : inputClass} text-lg font-semibold`}
                   placeholder="0.00"
                 />
                 {errors.amount && (
@@ -366,13 +373,13 @@ export default function AddEditSubscriptionDialog({
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Currency
                 </label>
                 <select
                   value={formData.currency}
                   onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                  className="w-full h-12 px-4 bg-white dark:bg-slate-800/50 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
+                  className={inputClass}
                 >
                   <option value="USD" className="bg-white dark:bg-slate-900">USD</option>
                   <option value="EUR" className="bg-white dark:bg-slate-900">EUR</option>
@@ -384,22 +391,23 @@ export default function AddEditSubscriptionDialog({
             {/* Row 4: Billing Date + Frequency */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Start Date
                 </label>
                 <CustomDatePicker
                   value={formData.startDate}
                   onChange={(date) => setFormData({ ...formData, startDate: date })}
+                  className={inputClass}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Billing Interval
                 </label>
                 <select
                   value={formData.billingInterval}
                   onChange={(e) => setFormData({ ...formData, billingInterval: e.target.value as 'Monthly' | 'Yearly' })}
-                  className="w-full h-12 px-4 bg-white dark:bg-slate-800/50 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
+                  className={inputClass}
                 >
                   <option value="Monthly" className="bg-white dark:bg-slate-900">Monthly</option>
                   <option value="Yearly" className="bg-white dark:bg-slate-900">Yearly</option>
@@ -409,14 +417,14 @@ export default function AddEditSubscriptionDialog({
 
             {/* Icon */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Icon
               </label>
               <div className="space-y-3">
                 <button
                   type="button"
                   onClick={() => setShowBrandSearch(true)}
-                  className="w-full px-4 py-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                  className="w-full px-4 py-2.5 bg-white/5 dark:bg-black/20 border border-white/10 dark:border-white/10 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-white/10 dark:hover:bg-white/5 transition-colors text-sm font-medium flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                 >
                   <Search className="w-4 h-4" />
                   Search Brand Icons
@@ -433,7 +441,7 @@ export default function AddEditSubscriptionDialog({
 
             {/* Color Picker */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Color
               </label>
               <div className="grid grid-cols-5 gap-3">
@@ -442,10 +450,10 @@ export default function AddEditSubscriptionDialog({
                     key={color}
                     type="button"
                     onClick={() => setFormData({ ...formData, color })}
-                    className={`w-full h-12 rounded-lg border-2 transition-all ${
+                    className={`w-full h-12 rounded-xl border-2 transition-all ${
                       formData.color === color
-                        ? 'border-slate-900 dark:border-white scale-110'
-                        : 'border-slate-300 dark:border-gray-700 hover:border-slate-400 dark:hover:border-gray-600'
+                        ? 'border-slate-900 dark:border-white scale-110 ring-2 ring-blue-500/30 shadow-lg'
+                        : 'border-white/10 dark:border-white/10 hover:border-white/20 dark:hover:border-white/20'
                     }`}
                     style={{ backgroundColor: color }}
                     aria-label={`Select color ${color}`}
@@ -456,13 +464,13 @@ export default function AddEditSubscriptionDialog({
 
             {/* Remind Me */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Remind me
               </label>
               <select
                 value={formData.remindMe}
                 onChange={(e) => setFormData({ ...formData, remindMe: e.target.value })}
-                className="w-full h-12 px-4 bg-white dark:bg-slate-800/50 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
+                className={inputClass}
               >
                 <option value="1" className="bg-white dark:bg-slate-900">1 day before</option>
                 <option value="3" className="bg-white dark:bg-slate-900">3 days before</option>
@@ -472,22 +480,22 @@ export default function AddEditSubscriptionDialog({
             </div>
 
             {/* Trial Period Toggle */}
-            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 dark:backdrop-blur-md rounded-lg border border-slate-200 dark:border-white/5">
+            <div className="flex items-center justify-between p-4 bg-white/5 dark:bg-black/20 rounded-xl border border-white/10 dark:border-white/10">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Trial Period
                 </label>
-                <p className="text-xs text-slate-500 dark:text-gray-400">Mark if this subscription has a trial period</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Mark if this subscription has a trial period</p>
               </div>
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, trialPeriod: !formData.trialPeriod, trialEndsOn: !formData.trialPeriod ? '' : formData.trialEndsOn })}
                 className={`relative w-12 h-6 rounded-full transition-colors ${
-                  formData.trialPeriod ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-900/50'
+                  formData.trialPeriod ? 'bg-blue-600 shadow-lg shadow-blue-500/30' : 'bg-slate-300 dark:bg-slate-700'
                 }`}
               >
                 <span
-                  className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                  className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
                     formData.trialPeriod ? 'translate-x-6' : 'translate-x-0'
                   }`}
                 />
@@ -503,20 +511,21 @@ export default function AddEditSubscriptionDialog({
                 <CustomDatePicker
                   value={formData.trialEndsOn}
                   onChange={(date) => setFormData({ ...formData, trialEndsOn: date })}
+                  className={inputClass}
                 />
               </div>
             )}
 
             {/* Notes */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Notes
               </label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={4}
-                className="w-full px-4 py-2.5 bg-white dark:bg-slate-800/50 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent resize-none"
+                className={`${inputClass} py-3 resize-none`}
                 placeholder="Add any additional notes about this subscription..."
               />
             </div>
@@ -525,11 +534,11 @@ export default function AddEditSubscriptionDialog({
         </div>
 
         {/* Footer - Sticky at bottom */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/80 rounded-b-3xl flex-shrink-0">
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-white/10 bg-white/5 dark:bg-black/10 rounded-b-3xl flex-shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-2 text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors border border-transparent hover:border-slate-200 dark:hover:border-white/10 rounded-lg"
+            className="px-6 py-2.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors rounded-xl hover:bg-white/10 dark:hover:bg-white/5"
           >
             Cancel
           </button>
@@ -537,12 +546,13 @@ export default function AddEditSubscriptionDialog({
             type="submit"
             form="subscription-form"
             disabled={!formData.name.trim() || !formData.amount.trim() || parseFloat(formData.amount) <= 0}
-            className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 dark:from-blue-600/80 dark:to-blue-700/80 dark:hover:from-blue-600/90 dark:hover:to-blue-700/90 dark:shadow-[0_0_15px_rgba(59,130,246,0.3)] shadow-blue-500/20 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-blue-600 disabled:hover:to-blue-700"
+            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
           >
             {subscription ? 'Save Changes' : 'Add Subscription'}
           </button>
         </div>
-      </div>
+        </motion.div>
+      </AnimatePresence>
 
       {/* Brand Icon Search Modal */}
       {showBrandSearch && (

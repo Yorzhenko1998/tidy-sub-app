@@ -14,7 +14,7 @@ export default function CategorySelect({ value, onChange }: CategorySelectProps)
     <select
       value={value || ''}
       onChange={(e) => onChange?.(e.target.value)}
-      className="w-full h-12 px-4 bg-white dark:bg-slate-800/50 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
+      className="w-full h-12 px-4 bg-white/5 dark:bg-black/20 border border-white/10 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
     >
       <option value="" disabled>
         Select a category

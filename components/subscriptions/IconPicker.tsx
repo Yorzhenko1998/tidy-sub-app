@@ -29,14 +29,14 @@ export default function IconPicker({ value, onChange }: IconPickerProps) {
             key={id}
             type="button"
             onClick={() => onChange?.(id)}
-            className={`p-4 rounded-lg border-2 transition-colors ${
+            className={`p-4 rounded-xl border-2 transition-all backdrop-blur-md ${
               value === id
-                ? 'border-blue-500 bg-blue-500/10'
-                : 'border-slate-200 dark:border-gray-700 bg-white dark:bg-slate-800/50 hover:border-slate-300 dark:hover:border-gray-600'
+                ? 'border-blue-500 bg-blue-500/20 dark:bg-blue-500/20 shadow-lg shadow-blue-500/20 ring-2 ring-blue-400/30'
+                : 'border-white/10 dark:border-white/10 bg-white/5 dark:bg-slate-800/40 hover:border-white/20 dark:hover:border-white/20 hover:bg-white/10 dark:hover:bg-white/5'
             }`}
           >
-            <Icon className={`w-6 h-6 mx-auto mb-1 ${value === id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-white'}`} strokeWidth={1.5} />
-            <p className={`text-xs ${value === id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-gray-400'}`}>{label}</p>
+            <Icon className={`w-6 h-6 mx-auto mb-1 ${value === id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'}`} strokeWidth={2} />
+            <p className={`text-xs font-medium ${value === id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}>{label}</p>
           </button>
         ))}
       </div>
