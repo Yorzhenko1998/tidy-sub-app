@@ -211,21 +211,22 @@ export default function CalendarTab() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] px-4 md:px-6 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[max(env(safe-area-inset-top),2.5rem)] md:pt-8 overflow-x-hidden">
+    <div className="min-h-[calc(100vh-80px)] p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[max(env(safe-area-inset-top),2.5rem)] md:pt-8 overflow-x-hidden">
       <div className="max-w-4xl mx-auto">
-        {/* Header Block - Calendar */}
-        <div className="bg-[#0f172a] dark:bg-slate-800/80 rounded-xl mb-4 mt-2 dark:border dark:border-slate-700/40 dark:border-b dark:border-white/5">
-          <h1 className="text-2xl font-bold tracking-tight !text-white text-center py-3">Calendar</h1>
-        </div>
+        <header className="mt-2 mb-4">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 text-center">
+            Calendar
+          </h1>
+        </header>
 
         <div className="md:flex md:items-start md:gap-4">
-          {/* Calendar */}
-          <div className="bg-white dark:bg-slate-800/40 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm p-5 md:p-6 mb-4 md:mb-0 md:max-w-[360px] md:mx-auto md:flex-none">
+          {/* Calendar - glassmorphism + shadow */}
+          <div className="bg-white/10 dark:bg-slate-800/40 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-2xl shadow-xl p-5 md:p-6 mb-4 md:mb-0 md:max-w-[360px] md:mx-auto md:flex-none">
             {/* Month Navigation */}
             <div className="flex items-center justify-between mb-4 md:mb-6">
               <button
                 onClick={() => navigateMonth('prev')}
-                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-navy-800 transition-colors text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-white"
+                className="p-2 rounded-lg hover:bg-white/10 dark:hover:bg-white/5 transition-colors text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
@@ -234,7 +235,7 @@ export default function CalendarTab() {
               </h2>
               <button
                 onClick={() => navigateMonth('next')}
-                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-navy-800 transition-colors text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-white"
+                className="p-2 rounded-lg hover:bg-white/10 dark:hover:bg-white/5 transition-colors text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -243,7 +244,7 @@ export default function CalendarTab() {
             {/* Week Days Header */}
             <div className="grid grid-cols-7 gap-2 mb-2">
               {weekDays.map((day) => (
-                <div key={day} className="text-center text-xs md:text-sm font-medium text-slate-500 dark:text-gray-400 py-1.5 md:py-2">
+                <div key={day} className="text-center text-xs md:text-sm font-medium text-slate-600 dark:text-slate-300 py-1.5 md:py-2">
                   {day}
                 </div>
               ))}
@@ -259,20 +260,23 @@ export default function CalendarTab() {
                   date.getFullYear() === selectedDate.getFullYear()
                 const isTodayDate = isToday(date)
 
+                const hasPayments = payments.length > 0
                 return (
                   <button
                     key={index}
                     onClick={() => isCurrentMonth && setSelectedDate(date)}
-                    className={`relative p-1.5 md:p-2 rounded-lg border-2 transition-colors aspect-square flex flex-col items-center justify-center ${
+                    className={`relative p-1.5 md:p-2 rounded-lg border-2 transition-all aspect-square flex flex-col items-center justify-center ${
                       !isCurrentMonth
-                        ? 'text-slate-400 dark:text-gray-600 border-slate-200 dark:border-white/10'
+                        ? 'text-slate-400 dark:text-gray-600 border-slate-200/70 dark:border-white/10'
                         : isSelected && isTodayDate
-                        ? 'bg-blue-600 text-white border-blue-500 ring-2 ring-blue-400 ring-offset-2 ring-offset-white dark:ring-offset-slate-900'
+                        ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/40 ring-2 ring-blue-400/50 ring-offset-2 ring-offset-white dark:ring-offset-slate-900'
                         : isSelected
-                        ? 'bg-blue-600 text-white border-blue-500'
+                        ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/30'
                         : isTodayDate
-                        ? 'bg-blue-500/30 dark:bg-blue-500/30 text-slate-900 dark:text-white border-blue-400'
-                        : 'text-slate-700 dark:text-gray-300 border-slate-200 dark:border-white/10 hover:bg-blue-50/50 dark:hover:bg-white/5'
+                        ? 'bg-blue-500/30 dark:bg-blue-500/30 text-slate-900 dark:text-white border-blue-400/60 shadow-md shadow-blue-500/20'
+                        : hasPayments
+                        ? 'text-slate-700 dark:text-gray-300 border-slate-200/70 dark:border-white/10 hover:bg-white/10 dark:hover:bg-white/5 shadow-sm shadow-slate-500/10'
+                        : 'text-slate-700 dark:text-gray-300 border-slate-200/70 dark:border-white/10 hover:bg-blue-50/50 dark:hover:bg-white/5'
                     }`}
                     disabled={!isCurrentMonth}
                   >
@@ -297,8 +301,8 @@ export default function CalendarTab() {
             </div>
           </div>
 
-          {/* Selected Date Payments */}
-          <div className="bg-blue-50 dark:bg-blue-900/10 border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm p-4 md:p-5 md:flex-1 md:ml-0 md:mt-0 mt-4">
+          {/* Selected Date Payments - glassmorphism */}
+          <div className="bg-white/10 dark:bg-slate-800/40 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-2xl shadow-xl p-4 md:p-5 md:flex-1 md:ml-0 md:mt-0 mt-4">
             <h3 className="text-sm md:text-lg font-semibold text-slate-900 dark:text-white mb-3 md:mb-4">
               {selectedDate
                 ? `${monthNames[selectedDate.getMonth()]} ${selectedDate.getDate()}, ${selectedDate.getFullYear()}`
@@ -312,7 +316,7 @@ export default function CalendarTab() {
                   return (
                     <div
                       key={payment.id}
-                      className="bg-white dark:bg-slate-800/40 dark:backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm py-1.5 md:py-2 px-3 md:px-4 hover:border-slate-300 dark:hover:border-white/10 transition-colors"
+                      className="bg-white/10 dark:bg-slate-800/40 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-2xl shadow-lg py-2 md:py-2.5 px-3 md:px-4 hover:border-white/30 dark:hover:border-white/20 transition-colors"
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2 md:gap-3">
@@ -333,7 +337,7 @@ export default function CalendarTab() {
                 })}
               </div>
             ) : selectedDate && selectedDatePayments.length === 0 ? (
-              <p className="text-slate-500 dark:text-gray-400 text-sm">No payments scheduled for this date</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">No payments scheduled for this date</p>
             ) : null}
           </div>
         </div>
