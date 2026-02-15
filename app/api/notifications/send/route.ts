@@ -9,12 +9,14 @@ webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY)
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { subscription, title = 'TidySub', body: notificationBody = '' } = body as {
-      subscription: { endpoint: string; keys?: Record<string, string> }
+    const body = (await request.json()) as {
+      subscription?: { endpoint: string; keys?: Record<string, string> }
       title?: string
       body?: string
     }
+    const subscription = body.subscription
+    const title = body.title ?? 'TidySub'
+    const notificationBody = body.body ?? ''
     if (!subscription || !subscription.endpoint) {
       return NextResponse.json(
         { error: 'Missing or invalid subscription' },
@@ -22,7 +24,7 @@ export async function POST(request: NextRequest) {
       )
     }
     const payload = JSON.stringify({ title, body: notificationBody })
-    await webpush.sendNotification(subscription, payload)
+    await webpush.sendNotification(subscription as any, payload)
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error('Send notification error:', err)
