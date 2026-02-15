@@ -18,26 +18,26 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray
 }
 
-async function enablePushNotifications(onError?: (msg: string) => void): Promise<boolean> {
+async function enablePushNotifications(onError?: (msg: string) => void): Promise<string | null> {
   const showError = (msg: string) => {
     if (onError) onError(msg)
     else alert(msg)
   }
   if (typeof window === 'undefined') {
     showError('Window is undefined')
-    return false
+    return null
   }
   if (!('serviceWorker' in navigator)) {
     showError('Service Worker not supported')
-    return false
+    return null
   }
   if (!('PushManager' in window)) {
     showError('PushManager not supported')
-    return false
+    return null
   }
   if (!window.Notification) {
     showError('Notification API not available')
-    return false
+    return null
   }
   try {
     const reg = await navigator.serviceWorker.register('/sw.js')
@@ -46,7 +46,7 @@ async function enablePushNotifications(onError?: (msg: string) => void): Promise
     const permission = await Notification.requestPermission()
     if (permission !== 'granted') {
       showError('Permission denied: ' + permission)
-      return false
+      return null
     }
     const key = urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
     const sub = await reg.pushManager.subscribe({
@@ -56,13 +56,26 @@ async function enablePushNotifications(onError?: (msg: string) => void): Promise
     const subJson = JSON.stringify(sub.toJSON ? sub.toJSON() : sub)
     console.log('Subscription object:', subJson)
     localStorage.setItem('push_sub', subJson)
-    return true
+    return subJson
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('Push subscription error:', err)
     showError('Push error: ' + msg)
-    return false
+    return null
   }
+}
+
+async function sendWelcomePush(subscriptionJson: string): Promise<void> {
+  const subscription = JSON.parse(subscriptionJson) as { endpoint: string; keys?: Record<string, string> }
+  await fetch('/api/notifications/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      subscription,
+      title: 'Welcome',
+      body: "You're all set! TidySub will remind you before subscriptions are due."
+    })
+  })
 }
 
 /** Normalize a raw parsed item to Subscription shape (export-compatible). */
@@ -227,13 +240,13 @@ export default function SettingsTab() {
         </header>
 
         {/* Account - Currency */}
-        <section className="bg-white/5 dark:bg-slate-900/40 backdrop-blur-md border border-white/10 dark:border-white/10 rounded-2xl p-6 mb-4">
+        <section className="bg-slate-100/80 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-4">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Account</h2>
           <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Currency</label>
           <select
             value={globalCurrency}
             onChange={(e) => setGlobalCurrency(e.target.value)}
-            className="w-full px-4 py-3 bg-white/10 dark:bg-slate-800/50 border border-white/10 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-transparent"
+            className="w-full px-4 py-3 bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-transparent"
           >
             <option value="USD" className="bg-white dark:bg-slate-900">USD ($)</option>
             <option value="EUR" className="bg-white dark:bg-slate-900">EUR (€)</option>
@@ -242,11 +255,11 @@ export default function SettingsTab() {
         </section>
 
         {/* Notifications */}
-        <section className="bg-white/5 dark:bg-slate-900/40 backdrop-blur-md border border-white/10 dark:border-white/10 rounded-2xl p-6 mb-4">
+        <section className="bg-slate-100/80 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-4">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Notifications</h2>
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-slate-200/50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
             <div>
-              <label className="text-slate-700 dark:text-slate-200 font-medium">
+              <label className="text-slate-900 dark:text-slate-200 font-medium">
                 {pushNotificationsEnabled ? 'Enabled' : 'Enable Push Notifications'}
               </label>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -269,10 +282,15 @@ export default function SettingsTab() {
                 setNotifError(null)
                 setNotifLoading(true)
                 try {
-                  const ok = await enablePushNotifications((msg) => setNotifError(msg))
-                  if (ok) {
+                  const subJson = await enablePushNotifications((msg) => setNotifError(msg))
+                  if (subJson) {
                     setPushNotificationsEnabled(true)
                     setToast('Notifications Enabled!')
+                    try {
+                      await sendWelcomePush(subJson)
+                    } catch (_) {
+                      // Welcome push failed; subscription is still saved
+                    }
                   }
                 } catch (err) {
                   setNotifError(err instanceof Error ? err.message : String(err))
@@ -299,9 +317,9 @@ export default function SettingsTab() {
         </section>
 
         {/* App - Appearance & Data */}
-        <section className="bg-white/5 dark:bg-slate-900/40 backdrop-blur-md border border-white/10 dark:border-white/10 rounded-2xl p-6 mb-4">
+        <section className="bg-slate-100/80 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-2xl p-6 mb-4">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">App</h2>
-          <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">Theme</p>
+          <p className="text-sm text-slate-700 dark:text-slate-300 mb-4">Theme</p>
           <div className="flex flex-row gap-3 mb-6">
             {([
               { mode: 'light' as const, icon: Sun, label: 'Light' },
@@ -314,7 +332,7 @@ export default function SettingsTab() {
                 className={`flex flex-col items-center justify-center gap-2 flex-1 px-4 py-3 rounded-xl border-2 transition-all ${
                   theme === mode
                     ? 'border-blue-500 bg-blue-500/20 dark:bg-blue-500/20 text-slate-900 dark:text-white shadow-lg shadow-blue-500/20'
-                    : 'border-white/10 dark:border-white/10 bg-white/5 dark:bg-slate-800/40 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/20'
+                    : 'border-slate-200 dark:border-white/10 bg-slate-100/80 dark:bg-slate-800/40 text-slate-900 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/20'
                 }`}
               >
                 <Icon className="w-5 h-5" strokeWidth={2} />
@@ -322,18 +340,18 @@ export default function SettingsTab() {
               </button>
             ))}
           </div>
-          <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">Data</p>
+          <p className="text-sm text-slate-700 dark:text-slate-300 mb-3">Data</p>
           <div className="flex flex-row gap-3">
             <button
               onClick={handleExport}
-              className="flex flex-row items-center justify-center gap-2 flex-1 h-11 md:h-12 px-3 md:px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors border border-blue-500/30 shadow-lg shadow-blue-500/20 text-sm md:text-base font-medium"
+              className="flex flex-row items-center justify-center gap-2 flex-1 h-11 md:h-12 px-3 md:px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors border border-slate-200 dark:border-blue-500/30 shadow-lg shadow-blue-500/20 text-sm md:text-base font-medium"
             >
               <Download className="w-4 h-4" strokeWidth={2} />
               <span>Export</span>
             </button>
             <button
               onClick={handleImport}
-              className="flex flex-row items-center justify-center gap-2 flex-1 h-11 md:h-12 px-3 md:px-4 bg-white/10 dark:bg-slate-800/40 backdrop-blur-md hover:bg-white/20 dark:hover:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl transition-colors border border-white/10 dark:border-white/10 text-sm md:text-base font-medium"
+              className="flex flex-row items-center justify-center gap-2 flex-1 h-11 md:h-12 px-3 md:px-4 bg-slate-100/80 dark:bg-slate-800/40 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white hover:bg-slate-200/80 dark:hover:bg-slate-700/50 transition-colors text-sm md:text-base font-medium"
             >
               <Upload className="w-4 h-4" strokeWidth={2} />
               <span>Import</span>
@@ -342,11 +360,11 @@ export default function SettingsTab() {
         </section>
 
         {/* Danger Zone - glass with red accent */}
-        <section className="bg-white/5 dark:bg-slate-900/40 backdrop-blur-md border border-red-500/30 dark:border-red-500/20 rounded-2xl p-6 shadow-lg shadow-red-500/5">
-          <h2 className="text-lg font-semibold text-red-500 dark:text-red-400 mb-4">Danger Zone</h2>
+        <section className="bg-slate-100/80 dark:bg-slate-900/40 backdrop-blur-md border border-red-200 dark:border-red-500/20 rounded-2xl p-6 shadow-lg shadow-red-500/5">
+          <h2 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Danger Zone</h2>
           <button
             onClick={handleDeleteAll}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors shadow-lg shadow-red-500/20"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors shadow-lg shadow-red-500/20 border border-red-700 dark:border-red-500/30"
           >
             <Trash2 className="w-5 h-5" strokeWidth={2} />
             Delete All Subscriptions
