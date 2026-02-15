@@ -12,7 +12,6 @@ export const metadata: Metadata = {
   title: 'TidySub',
   description: 'Subscription Tracker',
   manifest: '/manifest.json',
-  themeColor: '#000000',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -25,7 +24,8 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  viewportFit: 'cover' as const
+  viewportFit: 'cover' as const,
+  themeColor: '#000000'
 }
 
 export default function RootLayout({

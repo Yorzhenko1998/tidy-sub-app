@@ -34,6 +34,42 @@ self.addEventListener('fetch', (event) => {
   )
 })
 
+// Push event - show notification
+self.addEventListener('push', (event) => {
+  if (!event.data) return
+  let data = { title: 'TidySub', body: 'Upcoming payment reminder' }
+  try {
+    const parsed = event.data.json()
+    if (parsed.title) data.title = parsed.title
+    if (parsed.body) data.body = parsed.body
+  } catch (_) {
+    data.body = event.data.text() || data.body
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/icon-192x192.png',
+      badge: '/icon-192x192.png',
+      tag: 'tidysub-reminder',
+      requireInteraction: false
+    })
+  )
+})
+
+// Notification click - focus app
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      if (clientList.length > 0) {
+        clientList[0].focus()
+      } else if (clients.openWindow) {
+        clients.openWindow('/')
+      }
+    })
+  )
+})
+
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(

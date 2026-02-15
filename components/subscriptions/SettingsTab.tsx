@@ -5,13 +5,65 @@ import { Download, Upload, Trash2, Sun, Moon, Monitor } from 'lucide-react'
 import { useSubscriptions } from '@/contexts/SubscriptionContext'
 import type { Subscription } from '@/contexts/SubscriptionContext'
 
-// Тимчасова функція-заглушка для дозволу на пуші
-const requestNotificationPermission = async () => {
-  if (typeof window !== 'undefined' && 'Notification' in window) {
-    const permission = await Notification.requestPermission();
-    console.log('Push permission:', permission);
+const VAPID_PUBLIC_KEY = 'BPI6ObXIdnO6GMzrCXo-fgUvhRouhIZUBaa8bgkHtYfD1RTVpU8P0x93dqEDcOkhnRZLwSc2NGHfXG-GChiOaxI'
+
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = atob(base64)
+  const outputArray = new Uint8Array(rawData.length)
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i)
   }
-};
+  return outputArray
+}
+
+async function enablePushNotifications(onError?: (msg: string) => void): Promise<boolean> {
+  const showError = (msg: string) => {
+    if (onError) onError(msg)
+    else alert(msg)
+  }
+  if (typeof window === 'undefined') {
+    showError('Window is undefined')
+    return false
+  }
+  if (!('serviceWorker' in navigator)) {
+    showError('Service Worker not supported')
+    return false
+  }
+  if (!('PushManager' in window)) {
+    showError('PushManager not supported')
+    return false
+  }
+  if (!window.Notification) {
+    showError('Notification API not available')
+    return false
+  }
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js')
+    alert('SW registered: ' + !!reg)
+    alert('Notification window: ' + !!window.Notification)
+    const permission = await Notification.requestPermission()
+    if (permission !== 'granted') {
+      showError('Permission denied: ' + permission)
+      return false
+    }
+    const key = urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: key
+    } as PushSubscriptionOptionsInit)
+    const subJson = JSON.stringify(sub.toJSON ? sub.toJSON() : sub)
+    console.log('Subscription object:', subJson)
+    localStorage.setItem('push_sub', subJson)
+    return true
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('Push subscription error:', err)
+    showError('Push error: ' + msg)
+    return false
+  }
+}
 
 /** Normalize a raw parsed item to Subscription shape (export-compatible). */
 function normalizeSubscription(raw: unknown, index: number): Subscription | null {
@@ -83,6 +135,21 @@ export default function SettingsTab() {
     setPushNotificationsEnabled,
     replaceSubscriptions
   } = useSubscriptions()
+  const [toast, setToast] = useState<string | null>(null)
+  const [notifLoading, setNotifLoading] = useState(false)
+  const [notifError, setNotifError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), 3000)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  useEffect(() => {
+    if (!notifError) return
+    const t = setTimeout(() => setNotifError(null), 8000)
+    return () => clearTimeout(t)
+  }, [notifError])
 
   const handleExport = () => {
     const dataStr = JSON.stringify(subscriptions, null, 2)
@@ -179,18 +246,41 @@ export default function SettingsTab() {
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Notifications</h2>
           <div className="flex items-center justify-between gap-4">
             <div>
-              <label className="text-slate-700 dark:text-slate-200 font-medium">Enable Push Notifications</label>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Receive notifications for upcoming payments</p>
+              <label className="text-slate-700 dark:text-slate-200 font-medium">
+                {pushNotificationsEnabled ? 'Enabled' : 'Enable Push Notifications'}
+              </label>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {pushNotificationsEnabled
+                  ? 'You will receive reminders for upcoming payments'
+                  : 'Receive notifications for upcoming payments'}
+              </p>
             </div>
             <button
-              onClick={() => {
-                const newValue = !pushNotificationsEnabled
-                setPushNotificationsEnabled(newValue)
-                if (newValue) {
-                  requestNotificationPermission()
+              disabled={notifLoading}
+              onClick={async () => {
+                if (pushNotificationsEnabled) {
+                  setPushNotificationsEnabled(false)
+                  try {
+                    localStorage.removeItem('push_sub')
+                  } catch (_) {}
+                  setNotifError(null)
+                  return
+                }
+                setNotifError(null)
+                setNotifLoading(true)
+                try {
+                  const ok = await enablePushNotifications((msg) => setNotifError(msg))
+                  if (ok) {
+                    setPushNotificationsEnabled(true)
+                    setToast('Notifications Enabled!')
+                  }
+                } catch (err) {
+                  setNotifError(err instanceof Error ? err.message : String(err))
+                } finally {
+                  setNotifLoading(false)
                 }
               }}
-              className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ${
+              className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 disabled:opacity-70 ${
                 pushNotificationsEnabled ? 'bg-blue-600 shadow-lg shadow-blue-500/30' : 'bg-slate-300 dark:bg-slate-700'
               }`}
             >
@@ -201,6 +291,11 @@ export default function SettingsTab() {
               />
             </button>
           </div>
+          {notifError && (
+            <p className="mt-3 text-sm text-red-500 dark:text-red-400 break-words" role="alert">
+              {notifError}
+            </p>
+          )}
         </section>
 
         {/* App - Appearance & Data */}
@@ -258,6 +353,16 @@ export default function SettingsTab() {
           </button>
         </section>
       </div>
+
+      {/* Toast */}
+      {toast && (
+        <div
+          role="status"
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] px-4 py-2.5 bg-slate-900 dark:bg-slate-800 text-white text-sm font-medium rounded-xl shadow-lg"
+        >
+          {toast}
+        </div>
+      )}
     </div>
   )
 }

@@ -3,6 +3,7 @@
   "short_name": "TidySub",
   "description": "Subscription Tracker",
   "display": "standalone",
+  "id": "/",
   "start_url": "/",
   "background_color": "#000000",
   "theme_color": "#000000",
@@ -22,4 +23,3 @@
     }
   ]
 }
-
