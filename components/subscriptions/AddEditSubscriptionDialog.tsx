@@ -61,6 +61,8 @@ export default function AddEditSubscriptionDialog({
       const subIcon = subscription.icon || ''
       const brandIcon = subscription.brandIconUrl
       
+      const subAny = subscription as { remindMe?: string; reminder_days?: number }
+      const remindVal = subAny.remindMe ?? (subAny.reminder_days != null ? String(subAny.reminder_days) : '1')
       setFormData({
         name: subscription.name,
         amount: subscription.amount.toString(),
@@ -71,7 +73,7 @@ export default function AddEditSubscriptionDialog({
         icon: subIcon.startsWith('brand:') ? '' : subIcon,
         color: subscription.color,
         websiteUrl: subscription.websiteUrl || '',
-        remindMe: (subscription as any).remindMe || '1',
+        remindMe: remindVal,
         trialPeriod: (subscription as any).trialPeriod || false,
         trialEndsOn: (subscription as any).trialEndsOn ? toLocalISODate((subscription as any).trialEndsOn) : '',
         notes: (subscription as any).notes || ''
@@ -207,6 +209,18 @@ export default function AddEditSubscriptionDialog({
       }
     }
 
+    const reminder_days = parseInt(formData.remindMe, 10)
+    let push_subscription: { endpoint: string; keys?: Record<string, string> } | null = null
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('push_subscription') ?? localStorage.getItem('push_sub')
+        if (stored) {
+          const parsed = JSON.parse(stored) as { endpoint?: string; keys?: Record<string, string> }
+          if (parsed?.endpoint) push_subscription = { endpoint: parsed.endpoint, keys: parsed.keys }
+        }
+      } catch (_) {}
+    }
+
     const subscriptionData: any = {
       name: formData.name.trim(),
       amount: parseFloat(formData.amount),
@@ -217,11 +231,13 @@ export default function AddEditSubscriptionDialog({
       icon: selectedBrandIcon ? `brand:${selectedBrandIcon}` : (formData.icon || 'money'),
       color: formData.color,
       websiteUrl: normalizedUrl || undefined,
-      logoUrl: logoUrl || undefined, // Ensure logoUrl is saved (automatic logo)
+      logoUrl: logoUrl || undefined,
       remindMe: formData.remindMe,
+      reminder_days,
+      push_subscription,
       notes: formData.notes,
-      brandIconUrl: selectedBrandIcon || undefined, // Manual brand icon (customIcon)
-      isActive: subscription ? (subscription.isActive !== false) : true // Default to active for new subscriptions
+      brandIconUrl: selectedBrandIcon || undefined,
+      isActive: subscription ? (subscription.isActive !== false) : true
     }
 
     // Add trial period data if enabled
@@ -473,9 +489,10 @@ export default function AddEditSubscriptionDialog({
                 className={inputClass}
               >
                 <option value="1" className="bg-white dark:bg-slate-900">1 day before</option>
+                <option value="2" className="bg-white dark:bg-slate-900">2 days before</option>
                 <option value="3" className="bg-white dark:bg-slate-900">3 days before</option>
                 <option value="7" className="bg-white dark:bg-slate-900">7 days before</option>
-                <option value="0" className="bg-white dark:bg-slate-900">Don't remind me</option>
+                <option value="0" className="bg-white dark:bg-slate-900">Don&apos;t remind me</option>
               </select>
             </div>
 

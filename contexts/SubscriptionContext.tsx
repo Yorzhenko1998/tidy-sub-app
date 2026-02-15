@@ -2,6 +2,9 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
+/** Push subscription JSON as stored by the browser (endpoint + keys). */
+export type PushSubscriptionJSON = { endpoint: string; keys?: Record<string, string> }
+
 export interface Subscription {
   id: string
   name: string
@@ -16,6 +19,14 @@ export interface Subscription {
   logoUrl?: string
   brandIconUrl?: string
   isActive?: boolean
+  /** Number of days before payment to send reminder (0 = day of, 1, 2, 3, 7). */
+  reminderDays?: number
+  /** Stored push subscription for sending reminders to this device. */
+  pushSubscription?: PushSubscriptionJSON | null
+  /** Same as reminderDays; used by Cron / Supabase (reminder_days). */
+  reminder_days?: number
+  /** Same as pushSubscription; used by Cron / Supabase (push_subscription). */
+  push_subscription?: PushSubscriptionJSON | null
 }
 
 interface SubscriptionContextType {
@@ -279,14 +290,22 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // Guard: Only save after initial load is complete to prevent overwriting saved data
   useEffect(() => {
     if (!isLoaded) return
-    
+
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(subscriptions))
     } catch (error) {
       console.error('Error saving subscriptions to localStorage:', error)
-      // Continue execution even if save fails
-      // Could show a toast notification to user in production
     }
+  }, [subscriptions, isLoaded])
+
+  // Sync subscriptions to server for cron reminders (runs when subscriptions change)
+  useEffect(() => {
+    if (!isLoaded || typeof fetch === 'undefined') return
+    fetch('/api/subscriptions/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscriptions })
+    }).catch(() => {})
   }, [subscriptions, isLoaded])
 
 

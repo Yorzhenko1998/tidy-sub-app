@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import webpush from 'web-push'
 
-const VAPID_PUBLIC_KEY = 'BPI6ObXIdnO6GMzrCXo-fgUvhRouhIZUBaa8bgkHtYfD1RTVpU8P0x93dqEDcOkhnRZLwSc2NGHfXG-GChiOaxI'
-const VAPID_PRIVATE_KEY = '0itCDi_uX-hgUM4e9uHnQ4fSKh8QQw_CRgdB4eHIxuc'
-const VAPID_SUBJECT = 'mailto:admin@tidysub.com'
-
-webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY)
-
 export async function POST(request: NextRequest) {
+  const publicKey = process.env.VAPID_PUBLIC_KEY
+  const privateKey = process.env.VAPID_PRIVATE_KEY
+  const subject = process.env.VAPID_SUBJECT
+  if (!publicKey || !privateKey || !subject) {
+    return NextResponse.json(
+      { error: 'VAPID keys not configured' },
+      { status: 500 }
+    )
+  }
+  webpush.setVapidDetails(subject, publicKey, privateKey)
+
   try {
     const body = (await request.json()) as {
       subscription?: { endpoint: string; keys?: Record<string, string> }

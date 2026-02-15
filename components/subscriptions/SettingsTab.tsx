@@ -56,6 +56,7 @@ async function enablePushNotifications(onError?: (msg: string) => void): Promise
     const subJson = JSON.stringify(sub.toJSON ? sub.toJSON() : sub)
     console.log('Subscription object:', subJson)
     localStorage.setItem('push_sub', subJson)
+    localStorage.setItem('push_subscription', subJson)
     return subJson
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
@@ -127,11 +128,16 @@ function normalizeSubscription(raw: unknown, index: number): Subscription | null
   if (typeof o.isActive === 'boolean') sub.isActive = o.isActive
   else sub.isActive = true
 
-  // Default reminder to 1 day before; preserve valid value from JSON if present
-  const validRemindMe = ['0', '1', '3', '7']
+  const validRemindMe = ['0', '1', '2', '3', '7']
   const rawRemindMe = o.remindMe
   ;(sub as { remindMe?: string }).remindMe =
     typeof rawRemindMe === 'string' && validRemindMe.includes(rawRemindMe) ? rawRemindMe : '1'
+  const rawReminderDays = o.reminderDays
+  sub.reminderDays = typeof rawReminderDays === 'number' && !Number.isNaN(rawReminderDays) ? rawReminderDays : parseInt((sub as { remindMe?: string }).remindMe || '1', 10)
+  const rawPush = o.pushSubscription
+  if (rawPush && typeof rawPush === 'object' && typeof (rawPush as { endpoint?: string }).endpoint === 'string') {
+    sub.pushSubscription = rawPush as { endpoint: string; keys?: Record<string, string> }
+  }
 
   return sub
 }
@@ -275,6 +281,7 @@ export default function SettingsTab() {
                   setPushNotificationsEnabled(false)
                   try {
                     localStorage.removeItem('push_sub')
+                    localStorage.removeItem('push_subscription')
                   } catch (_) {}
                   setNotifError(null)
                   return
