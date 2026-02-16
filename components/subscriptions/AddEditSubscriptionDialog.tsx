@@ -136,7 +136,7 @@ export default function AddEditSubscriptionDialog({
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!validateForm()) {
@@ -249,12 +249,27 @@ export default function AddEditSubscriptionDialog({
       subscriptionData.trialEndsOn = ''
     }
 
+    // Ensure we have a stable id for cloud storage
+    const id = subscription ? subscription.id : (subscriptionData.id as string | undefined) ?? (Date.now().toString() + Math.random().toString(36).substr(2, 9))
+    subscriptionData.id = id
+
     if (subscription) {
       // Update existing subscription
       updateSubscription(subscription.id, subscriptionData)
     } else {
       // Add new subscription
       addSubscription(subscriptionData)
+    }
+
+    // Persist to cloud (Vercel KV) for cron-based reminders
+    try {
+      await fetch('/api/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subscription ? { ...subscriptionData, id: subscription.id } : subscriptionData),
+      })
+    } catch (_) {
+      // Ignore cloud errors; local state is still updated
     }
 
     onClose()

@@ -310,9 +310,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
 
   const addSubscription = (subscription: Omit<Subscription, 'id'>) => {
+    const maybeId = (subscription as any).id as string | undefined
     const newSubscription: Subscription = {
       ...subscription,
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      id: maybeId ?? (Date.now().toString() + Math.random().toString(36).substr(2, 9)),
       isActive: subscription.isActive !== undefined ? subscription.isActive : true
     }
     setSubscriptions((prev) => [...prev, newSubscription])
